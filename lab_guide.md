@@ -153,4 +153,14 @@ Name       IP            SKU
 pip-appgw  20.160.25.38  Standard
 ```
 ---
+## screenshot
+resources :
+
+<img width="851" height="293" alt="Capture d&#39;écran 2026-09-03 122619" src="https://github.com/user-attachments/assets/a20d8e13-7cbe-49ea-a1f4-69ffd81f6b11" />
+
+
+
+
+
+
 
