@@ -2,7 +2,7 @@
 # 🚀 Step-by-Step Deployment Guide
 ---
 
-# Phase 1: Network Foundation Infrastructure
+# Phase 1 : Network Foundation Infrastructure
 ## 1. Configuration Variables Setup
 
 ```Bash
@@ -117,7 +117,7 @@ az network public-ip create \
 ```
 ---
 
-# ✅ Phase 1 Verification & Proofs
+# ✅ Phase 1 — Verification & Proofs
 
 ## Subnet & NSG Association Check
 ```Bash
@@ -598,7 +598,7 @@ Deny-All-Outbound                    4096        Outbound     Deny      *       
 ```
 ---
 
-# Phase 2 — Règles NSG
+# Phase 3 — Fichiers cloud-init hors ligne
 
 refair l'ip public
 LOCATION="westeurope"
@@ -612,3 +612,68 @@ RG_NAME="grp_tpaz104-lab2"
   --sku Standard \
   --allocation-method Static
 ```
+
+## 1. Contenu des fichiers
+
+cloud-init-web.yaml
+```yaml
+write_files:
+  - path: /etc/systemd/system/az104-web.service
+    permissions: '0644'
+    owner: root:root
+    content: |
+      [Unit]
+      Description=AZ-104 Lab Web Backend
+      After=network-online.target
+      Wants=network-online.target
+
+      [Service]
+      Type=simple
+      ExecStart=/usr/bin/python3 -m http.server 80 --directory /srv/az104/web
+      Restart=always
+      RestartSec=3
+
+      [Install]
+      WantedBy=multi-user.target
+
+runcmd:
+  - mkdir -p /srv/az104/web
+  - printf 'OK-WEB\n' > /srv/az104/web/index.html
+  - chmod 0644 /srv/az104/web/index.html
+  - systemctl daemon-reload
+  - systemctl enable --now az104-web.service
+```
+
+cloud-init-api.yaml
+```yaml
+write_files:
+  - path: /etc/systemd/system/az104-api.service
+    permissions: '0644'
+    owner: root:root
+    content: |
+      [Unit]
+      Description=AZ-104 Lab API Backend
+      After=network-online.target
+      Wants=network-online.target
+
+      [Service]
+      Type=simple
+      ExecStart=/usr/bin/python3 -m http.server 80 --directory /srv/az104/api
+      Restart=always
+      RestartSec=3
+
+      [Install]
+      WantedBy=multi-user.target
+
+runcmd:
+  - mkdir -p /srv/az104/api/api
+  - printf 'OK-API-ROOT\n' > /srv/az104/api/index.html
+  - printf 'OK-API\n' > /srv/az104/api/api/index.html
+  - printf 'OK-API-HEALTHY\n' > /srv/az104/api/api/health
+  - chmod 0644 /srv/az104/api/index.html /srv/az104/api/api/index.html /srv/az104/api/api/health
+  - systemctl daemon-reload
+  - systemctl enable --now az104-api.service
+
+```
+
+
