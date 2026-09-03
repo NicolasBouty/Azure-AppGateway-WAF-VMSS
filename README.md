@@ -35,3 +35,9 @@ This repository demonstrates a fully private, production-grade multi-tier archit
                        │
           Jumpbox Private — 10.0.4.0/24
           (Azure Serial Console Only)
+```
+
+
+
+
+
