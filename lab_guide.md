@@ -270,7 +270,7 @@ az network nsg rule list \
   --query "[].{Name:name, Priority:priority, Direction:direction, Access:access, Source:sourceAddressPrefix, Dest:destinationAddressPrefix, DestPort:destinationPortRange}" \
   --output table
 ```
-### résulta :
+## résulta :
 ```Bash
 Name                             Priority    Direction    Access    Source             Dest            DestPort
 -------------------------------  ----------  -----------  --------  -----------------  --------------  -----------
@@ -380,7 +380,7 @@ az network nsg rule list \
   --query "[].{Name:name, Priority:priority, Direction:direction, Access:access, Source:sourceAddressPrefix, Dest:destinationAddressPrefix, DestPort:destinationPortRange}" \
   --output table
 ```
-### résulta :
+## résulta :
 ```Bash
 Name                             Priority    Direction    Access    Source       Dest         DestPort
 -------------------------------  ----------  -----------  --------  -----------  -----------  ----------
@@ -399,7 +399,7 @@ APPGW_SUBNET="10.0.1.0/24"
 API_SUBNET="10.0.3.0/24"
 MGMT_SUBNET="10.0.4.0/24"
 ```
-### INBOUND
+## INBOUND
 ```Bash
 az network nsg rule create \
   --resource-group "$RG_NAME" \
@@ -466,7 +466,7 @@ az network nsg rule create \
   --destination-address-prefix '*' \
   --destination-port-range '*'
 ```
-# OUTBOUND
+## OUTBOUND
 ```Bash
 az network nsg rule create \
   --resource-group "$RG_NAME" \
@@ -489,7 +489,7 @@ az network nsg rule list \
   --query "[].{Name:name, Priority:priority, Direction:direction, Access:access, Source:sourceAddressPrefix, Dest:destinationAddressPrefix, DestPort:destinationPortRange}" \
   --output table
 ```
-### résulta :
+## résulta :
 ```Bash
 Name                             Priority    Direction    Access    Source       Dest         DestPort
 -------------------------------  ----------  -----------  --------  -----------  -----------  ----------
@@ -499,6 +499,119 @@ Allow-HTTP-From-Jumpbox-LabTest  115         Inbound      Allow     10.0.4.0/24 
 Deny-Test-Port-8080              200         Inbound      Deny      10.0.4.0/24  10.0.3.0/24  8080
 Deny-All-Inbound                 4096        Inbound      Deny      *            *            *
 Deny-All-Outbound                4096        Outbound     Deny      *            *            *
+```
+---
+
+## 4. nsg-mgmt
+```Bash
+MGMT_SUBNET="10.0.4.0/24" 
+WEB_SUBNET="10.0.2.0/24" 
+API_SUBNET="10.0.3.0/24" 
+APPGW_PRIVATE_IP="10.0.1.10"
+```
+## INBOUND
+```Bash
+az network nsg rule create \
+  --resource-group "$RG_NAME" \
+  --nsg-name nsg-mgmt \
+  --name Allow-SSH-Inbound \
+  --priority 100 \
+  --direction Inbound \
+  --access Allow \
+  --protocol Tcp \
+  --source-address-prefix Internet \
+  --source-port-range '*' \
+  --destination-address-prefix "$MGMT_SUBNET" \
+  --destination-port-range 22
+
+az network nsg rule create \
+  --resource-group "$RG_NAME" \
+  --nsg-name nsg-mgmt \
+  --name Deny-All-Inbound \
+  --priority 4096 \
+  --direction Inbound \
+  --access Deny \
+  --protocol '*' \
+  --source-address-prefix '*' \
+  --source-port-range '*' \
+  --destination-address-prefix '*' \
+  --destination-port-range '*'
+```
+## OUTBOUND
+```Bash
+az network nsg rule create \
+  --resource-group "$RG_NAME" \
+  --nsg-name nsg-mgmt \
+  --name Allow-SSH-To-Backends \
+  --priority 100 \
+  --direction Outbound \
+  --access Allow \
+  --protocol Tcp \
+  --source-address-prefix "$MGMT_SUBNET" \
+  --source-port-range '*' \
+  --destination-address-prefixes "$WEB_SUBNET" "$API_SUBNET" \
+  --destination-port-range 22
+
+# Allow HTTP to AppGW Private IP
+az network nsg rule create \
+  --resource-group "$RG_NAME" \
+  --nsg-name nsg-mgmt \
+  --name Allow-HTTP-To-AppGW-PrivateFrontend \
+  --priority 110 \
+  --direction Outbound \
+  --access Allow \
+  --protocol Tcp \
+  --source-address-prefix "$MGMT_SUBNET" \
+  --source-port-range '*' \
+  --destination-address-prefix "$APPGW_PRIVATE_IP" \
+  --destination-port-range 80
+
+# Allow HTTP to Backends (Internal Testing)
+az network nsg rule create \
+  --resource-group "$RG_NAME" \
+  --nsg-name nsg-mgmt \
+  --name Allow-HTTP-To-Backends-LabTest \
+  --priority 120 \
+  --direction Outbound \
+  --access Allow \
+  --protocol Tcp \
+  --source-address-prefix "$MGMT_SUBNET" \
+  --source-port-range '*' \
+  --destination-address-prefixes "$WEB_SUBNET" "$API_SUBNET" \
+  --destination-port-range 80
+
+# Deny All Other Outbound
+az network nsg rule create \
+  --resource-group "$RG_NAME" \
+  --nsg-name nsg-mgmt \
+  --name Deny-All-Outbound \
+  --priority 4096 \
+  --direction Outbound \
+  --access Deny \
+  --protocol '*' \
+  --source-address-prefix '*' \
+  --source-port-range '*' \
+  --destination-address-prefix '*' \
+  --destination-port-range '*'
+```
+## vérifier le résultat avec
+```Bash
+az network nsg rule list \
+  --resource-group "$RG_NAME" \
+  --nsg-name nsg-mgmt \
+  --query "[].{Name:name, Priority:priority, Direction:direction, Access:access, Source:sourceAddressPrefix || join(',', sourceAddressPrefixes), Dest:destinationAddressPrefix || join(',', destinationAddressPrefixes), DestPort:destinationPortRange}" \
+  --output table
+```
+## résulta :
+```Bash
+Name                                 Priority    Direction    Access    Source       Dest                     DestPort
+-----------------------------------  ----------  -----------  --------  -----------  -----------------------  ----------
+Allow-SSH-Inbound                    100         Inbound      Allow     Internet     10.0.4.0/24              22
+Deny-All-Inbound                     4096        Inbound      Deny      *            *                        *
+Allow-SSH-To-Backends                100         Outbound     Allow     10.0.4.0/24  10.0.2.0/24,10.0.3.0/24  22
+Allow-HTTP-To-AppGW-PrivateFrontend  110         Outbound     Allow     10.0.4.0/24  10.0.1.10                80
+Allow-HTTP-To-Backends-LabTest       120         Outbound     Allow     10.0.4.0/24  10.0.2.0/24,10.0.3.0/24  80
+Deny-All-Outbound                    4096        Outbound     Deny      *            *                        *
 ```
 ---
 
