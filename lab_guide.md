@@ -504,26 +504,13 @@ Deny-All-Outbound                4096        Outbound     Deny      *           
 
 ## 4. nsg-mgmt
 ```Bash
-MGMT_SUBNET="10.0.4.0/24" 
-WEB_SUBNET="10.0.2.0/24" 
-API_SUBNET="10.0.3.0/24" 
+MGMT_SUBNET="10.0.4.0/24"
+WEB_SUBNET="10.0.2.0/24"
+API_SUBNET="10.0.3.0/24"
 APPGW_PRIVATE_IP="10.0.1.10"
 ```
 ## INBOUND
 ```Bash
-az network nsg rule create \
-  --resource-group "$RG_NAME" \
-  --nsg-name nsg-mgmt \
-  --name Allow-SSH-Inbound \
-  --priority 100 \
-  --direction Inbound \
-  --access Allow \
-  --protocol Tcp \
-  --source-address-prefix Internet \
-  --source-port-range '*' \
-  --destination-address-prefix "$MGMT_SUBNET" \
-  --destination-port-range 22
-
 az network nsg rule create \
   --resource-group "$RG_NAME" \
   --nsg-name nsg-mgmt \
@@ -552,7 +539,6 @@ az network nsg rule create \
   --destination-address-prefixes "$WEB_SUBNET" "$API_SUBNET" \
   --destination-port-range 22
 
-# Allow HTTP to AppGW Private IP
 az network nsg rule create \
   --resource-group "$RG_NAME" \
   --nsg-name nsg-mgmt \
@@ -566,7 +552,6 @@ az network nsg rule create \
   --destination-address-prefix "$APPGW_PRIVATE_IP" \
   --destination-port-range 80
 
-# Allow HTTP to Backends (Internal Testing)
 az network nsg rule create \
   --resource-group "$RG_NAME" \
   --nsg-name nsg-mgmt \
@@ -580,7 +565,6 @@ az network nsg rule create \
   --destination-address-prefixes "$WEB_SUBNET" "$API_SUBNET" \
   --destination-port-range 80
 
-# Deny All Other Outbound
 az network nsg rule create \
   --resource-group "$RG_NAME" \
   --nsg-name nsg-mgmt \
@@ -606,7 +590,6 @@ az network nsg rule list \
 ```Bash
 Name                                 Priority    Direction    Access    Source       Dest                     DestPort
 -----------------------------------  ----------  -----------  --------  -----------  -----------------------  ----------
-Allow-SSH-Inbound                    100         Inbound      Allow     Internet     10.0.4.0/24              22
 Deny-All-Inbound                     4096        Inbound      Deny      *            *                        *
 Allow-SSH-To-Backends                100         Outbound     Allow     10.0.4.0/24  10.0.2.0/24,10.0.3.0/24  22
 Allow-HTTP-To-AppGW-PrivateFrontend  110         Outbound     Allow     10.0.4.0/24  10.0.1.10                80
