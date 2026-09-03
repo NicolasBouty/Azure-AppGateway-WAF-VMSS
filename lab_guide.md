@@ -615,8 +615,10 @@ RG_NAME="grp_tpaz104-lab2"
 
 ## 1. Contenu des fichiers
 
-cloud-init-web.yaml
+### cloud-init-web.yaml
 ```yaml
+#cloud-config
+
 write_files:
   - path: /etc/systemd/system/az104-web.service
     permissions: '0644'
@@ -644,8 +646,10 @@ runcmd:
   - systemctl enable --now az104-web.service
 ```
 
-cloud-init-api.yaml
+### cloud-init-api.yaml
 ```yaml
+#cloud-config
+
 write_files:
   - path: /etc/systemd/system/az104-api.service
     permissions: '0644'
@@ -673,7 +677,164 @@ runcmd:
   - chmod 0644 /srv/az104/api/index.html /srv/az104/api/api/index.html /srv/az104/api/api/health
   - systemctl daemon-reload
   - systemctl enable --now az104-api.service
+```
 
+ ## 2. Déploiement des VMSS
+
+```Bash
+#!/usr/bin/env bash
+set -euo pipefail
+
+RG_NETWORK="grp_tpaz104-lab"
+RG_WORKLOAD="grp_tpaz104-lab2"
+LOCATION="westeurope"
+VNET_NAME="vnet_tpaz104-lab"
+
+ADMIN_USER="azureuser"
+SKU_VMSS="Standard_D2als_v7"
+SKU_JUMPBOX="Standard_B1s"
+IMAGE_UBUNTU="Canonical:ubuntu-24_04-lts:server:latest"
+SSH_PUBLIC_KEY="$HOME/.ssh/id_rsa.pub"
+
+if [ ! -f "$SSH_PUBLIC_KEY" ]; then
+  ssh-keygen -t rsa -b 4096 -N "" -f "$HOME/.ssh/id_rsa"
+fi
+
+read -rsp "Mot de passe local de la Jumpbox : " JUMPBOX_PASSWORD
+echo
+
+SUBNET_WEB_ID=$(az network vnet subnet show \
+  --resource-group "$RG_NETWORK" \
+  --vnet-name "$VNET_NAME" \
+  --name subnet-backend-a \
+  --query id \
+  --output tsv)
+
+SUBNET_API_ID=$(az network vnet subnet show \
+  --resource-group "$RG_NETWORK" \
+  --vnet-name "$VNET_NAME" \
+  --name subnet-backend-b \
+  --query id \
+  --output tsv)
+
+SUBNET_MGMT_ID=$(az network vnet subnet show \
+  --resource-group "$RG_NETWORK" \
+  --vnet-name "$VNET_NAME" \
+  --name subnet-mgmt \
+  --query id \
+  --output tsv)
+
+echo "=== Création du VMSS Web ==="
+az vmss create \
+  --resource-group "$RG_WORKLOAD" \
+  --name vmss-web \
+  --location "$LOCATION" \
+  --orchestration-mode Uniform \
+  --upgrade-policy-mode Manual \
+  --image "$IMAGE_UBUNTU" \
+  --vm-sku "$SKU_VMSS" \
+  --instance-count 1 \
+  --admin-username "$ADMIN_USER" \
+  --ssh-key-values "$SSH_PUBLIC_KEY" \
+  --subnet "$SUBNET_WEB_ID" \
+  --custom-data cloud-init-web.yaml
+
+echo "=== Création du VMSS API ==="
+az vmss create \
+  --resource-group "$RG_WORKLOAD" \
+  --name vmss-api \
+  --location "$LOCATION" \
+  --orchestration-mode Uniform \
+  --upgrade-policy-mode Manual \
+  --image "$IMAGE_UBUNTU" \
+  --vm-sku "$SKU_VMSS" \
+  --instance-count 1 \
+  --admin-username "$ADMIN_USER" \
+  --ssh-key-values "$SSH_PUBLIC_KEY" \
+  --subnet "$SUBNET_API_ID" \
+  --custom-data cloud-init-api.yaml
+
+echo "=== Création de la Jumpbox privée ==="
+az vm create \
+  --resource-group "$RG_WORKLOAD" \
+  --name vm-jumpbox \
+  --location "$LOCATION" \
+  --image "$IMAGE_UBUNTU" \
+  --size "$SKU_JUMPBOX" \
+  --admin-username "$ADMIN_USER" \
+  --admin-password "$JUMPBOX_PASSWORD" \
+  --authentication-type password \
+  --subnet "$SUBNET_MGMT_ID" \
+  --public-ip-address "" \
+  --boot-diagnostics true
+
+unset JUMPBOX_PASSWORD
+
+echo "=== Déploiement des VMSS et de la Jumpbox terminé. ==="
 ```
 
 
+Ajoute Autoscale après le déploiement
+
+Ajoute ce bloc après la création des deux VMSS.
+
+bash
+echo "=== Création de l'Autoscale VMSS Web : min 1 / max 2 ==="
+az monitor autoscale create \
+  --resource-group "$RG_WORKLOAD" \
+  --resource vmss-web \
+  --resource-type Microsoft.Compute/virtualMachineScaleSets \
+  --name autoscale-vmss-web \
+  --min-count 1 \
+  --max-count 2 \
+  --count 2
+
+echo "=== Création de l'Autoscale VMSS API : min 1 / max 2 ==="
+az monitor autoscale create \
+  --resource-group "$RG_WORKLOAD" \
+  --resource vmss-api \
+  --resource-type Microsoft.Compute/virtualMachineScaleSets \
+  --name autoscale-vmss-api \
+  --min-count 1 \
+  --max-count 2 \
+  --count 2
+
+
+VMSS Web
+
+bash
+# Ajouter une instance si CPU moyenne > 70 % pendant 5 min
+az monitor autoscale rule create \
+  --resource-group "$RG_WORKLOAD" \
+  --autoscale-name autoscale-vmss-web \
+  --condition "Percentage CPU > 70 avg 5m" \
+  --scale out 1 \
+  --cooldown 5
+
+# Retirer une instance si CPU moyenne < 30 % pendant 10 min
+az monitor autoscale rule create \
+  --resource-group "$RG_WORKLOAD" \
+  --autoscale-name autoscale-vmss-web \
+  --condition "Percentage CPU < 30 avg 10m" \
+  --scale in 1 \
+  --cooldown 10
+
+
+VMSS API
+
+bash
+# Ajouter une instance si CPU moyenne > 70 % pendant 5 min
+az monitor autoscale rule create \
+  --resource-group "$RG_WORKLOAD" \
+  --autoscale-name autoscale-vmss-api \
+  --condition "Percentage CPU > 70 avg 5m" \
+  --scale out 1 \
+  --cooldown 5
+
+# Retirer une instance si CPU moyenne < 30 % pendant 10 min
+az monitor autoscale rule create \
+  --resource-group "$RG_WORKLOAD" \
+  --autoscale-name autoscale-vmss-api \
+  --condition "Percentage CPU < 30 avg 10m" \
+  --scale in 1 \
+  --cooldown 10
