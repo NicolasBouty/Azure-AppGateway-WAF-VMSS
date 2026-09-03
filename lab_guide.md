@@ -598,4 +598,15 @@ Deny-All-Outbound                    4096        Outbound     Deny      *       
 ```
 ---
 
+# Phase 2 — Règles NSG
 
+refair l'ip public
+LOCATION="westeurope"
+RG_NAME="grp_tpaz104-lab2"
+
+ az network public-ip create \
+  --resource-group $RG_NAME \
+  --name pip-appgw \
+  --location $LOCATION \
+  --sku Standard \
+  --allocation-method Static
