@@ -158,9 +158,348 @@ resources :
 
 <img width="851" height="293" alt="Capture d&#39;écran 2026-09-03 122619" src="https://github.com/user-attachments/assets/a20d8e13-7cbe-49ea-a1f4-69ffd81f6b11" />
 
+---
 
+# Phase 2 — Règles NSG
 
+## 1. nsg-appgw
+```Bash
+APPGW_SUBNET="10.0.1.0/24"
+RG_NAME="grp_tpaz104-lab"
+```
+## INBOUND
+```Bash
+az network nsg rule create \
+  --resource-group "$RG_NAME" \
+  --nsg-name nsg-appgw \
+  --name Allow-Internet-Inbound \
+  --priority 100 \
+  --direction Inbound \
+  --access Allow \
+  --protocol Tcp \
+  --source-address-prefix Internet \
+  --source-port-range '*' \
+  --destination-address-prefix "$APPGW_SUBNET" \
+  --destination-port-ranges 80 443
 
+az network nsg rule create \
+  --resource-group "$RG_NAME" \
+  --nsg-name nsg-appgw \
+  --name Allow-GatewayManager-Inbound \
+  --priority 110 \
+  --direction Inbound \
+  --access Allow \
+  --protocol Tcp \
+  --source-address-prefix GatewayManager \
+  --source-port-range '*' \
+  --destination-address-prefix "$APPGW_SUBNET" \
+  --destination-port-range 65200-65535
 
+az network nsg rule create \
+  --resource-group "$RG_NAME" \
+  --nsg-name nsg-appgw \
+  --name Allow-AzureLoadBalancer-Inbound \
+  --priority 120 \
+  --direction Inbound \
+  --access Allow \
+  --protocol '*' \
+  --source-address-prefix AzureLoadBalancer \
+  --source-port-range '*' \
+  --destination-address-prefix "$APPGW_SUBNET" \
+  --destination-port-range '*'
+
+az network nsg rule create \
+  --resource-group "$RG_NAME" \
+  --nsg-name nsg-appgw \
+  --name Deny-All-Inbound \
+  --priority 4096 \
+  --direction Inbound \
+  --access Deny \
+  --protocol '*' \
+  --source-address-prefix '*' \
+  --source-port-range '*' \
+  --destination-address-prefix '*' \
+  --destination-port-range '*'
+```
+## OUTBOUND
+```Bash
+az network nsg rule create \
+  --resource-group "$RG_NAME" \
+  --nsg-name nsg-appgw \
+  --name Allow-VNet-Outbound \
+  --priority 100 \
+  --direction Outbound \
+  --access Allow \
+  --protocol '*' \
+  --source-address-prefix "$APPGW_SUBNET" \
+  --source-port-range '*' \
+  --destination-address-prefix VirtualNetwork \
+  --destination-port-range '*'
+
+az network nsg rule create \
+  --resource-group "$RG_NAME" \
+  --nsg-name nsg-appgw \
+  --name Allow-Internet-Outbound-Temp \
+  --priority 110 \
+  --direction Outbound \
+  --access Allow \
+  --protocol '*' \
+  --source-address-prefix "$APPGW_SUBNET" \
+  --source-port-range '*' \
+  --destination-address-prefix Internet \
+  --destination-port-range '*'
+
+az network nsg rule create \
+  --resource-group "$RG_NAME" \
+  --nsg-name nsg-appgw \
+  --name Deny-All-Outbound \
+  --priority 4096 \
+  --direction Outbound \
+  --access Deny \
+  --protocol '*' \
+  --source-address-prefix '*' \
+  --source-port-range '*' \
+  --destination-address-prefix '*' \
+  --destination-port-range '*'
+```
+## vérifier le résultat avec
+```Bash
+az network nsg rule list \
+  --resource-group "$RG_NAME" \
+  --nsg-name nsg-appgw \
+  --query "[].{Name:name, Priority:priority, Direction:direction, Access:access, Source:sourceAddressPrefix, Dest:destinationAddressPrefix, DestPort:destinationPortRange}" \
+  --output table
+```
+### résulta :
+```Bash
+Name                             Priority    Direction    Access    Source             Dest            DestPort
+-------------------------------  ----------  -----------  --------  -----------------  --------------  -----------
+Allow-Internet-Inbound           100         Inbound      Allow     Internet           10.0.1.0/24
+Allow-GatewayManager-Inbound     110         Inbound      Allow     GatewayManager     10.0.1.0/24     65200-65535
+Allow-AzureLoadBalancer-Inbound  120         Inbound      Allow     AzureLoadBalancer  10.0.1.0/24     *
+Deny-All-Inbound                 4096        Inbound      Deny      *                  *               *
+Allow-VNet-Outbound              100         Outbound     Allow     10.0.1.0/24        VirtualNetwork  *
+Allow-Internet-Outbound-Temp     110         Outbound     Allow     10.0.1.0/24        Internet        *
+Deny-All-Outbound                4096        Outbound     Deny      *                  *               *
+```
+---
+
+## 2. nsg-backend-a
+```Bash
+APPGW_SUBNET="10.0.1.0/24"
+WEB_SUBNET="10.0.2.0/24"
+MGMT_SUBNET="10.0.4.0/24"
+```
+## INBOUND
+```Bash
+az network nsg rule create \
+  --resource-group "$RG_NAME" \
+  --nsg-name nsg-backend-a \
+  --name Allow-HTTP-From-AppGW \
+  --priority 100 \
+  --direction Inbound \
+  --access Allow \
+  --protocol Tcp \
+  --source-address-prefix "$APPGW_SUBNET" \
+  --source-port-range '*' \
+  --destination-address-prefix "$WEB_SUBNET" \
+  --destination-port-range 80
+
+az network nsg rule create \
+  --resource-group "$RG_NAME" \
+  --nsg-name nsg-backend-a \
+  --name Allow-SSH-From-Jumpbox \
+  --priority 110 \
+  --direction Inbound \
+  --access Allow \
+  --protocol Tcp \
+  --source-address-prefix "$MGMT_SUBNET" \
+  --source-port-range '*' \
+  --destination-address-prefix "$WEB_SUBNET" \
+  --destination-port-range 22
+
+az network nsg rule create \
+  --resource-group "$RG_NAME" \
+  --nsg-name nsg-backend-a \
+  --name Allow-HTTP-From-Jumpbox-LabTest \
+  --priority 115 \
+  --direction Inbound \
+  --access Allow \
+  --protocol Tcp \
+  --source-address-prefix "$MGMT_SUBNET" \
+  --source-port-range '*' \
+  --destination-address-prefix "$WEB_SUBNET" \
+  --destination-port-range 80
+
+az network nsg rule create \
+  --resource-group "$RG_NAME" \
+  --nsg-name nsg-backend-a \
+  --name Deny-Test-Port-8080 \
+  --priority 200 \
+  --direction Inbound \
+  --access Deny \
+  --protocol Tcp \
+  --source-address-prefix "$MGMT_SUBNET" \
+  --source-port-range '*' \
+  --destination-address-prefix "$WEB_SUBNET" \
+  --destination-port-range 8080
+
+az network nsg rule create \
+  --resource-group "$RG_NAME" \
+  --nsg-name nsg-backend-a \
+  --name Deny-All-Inbound \
+  --priority 4096 \
+  --direction Inbound \
+  --access Deny \
+  --protocol '*' \
+  --source-address-prefix '*' \
+  --source-port-range '*' \
+  --destination-address-prefix '*' \
+  --destination-port-range '*'
+```
+## OUTBOUND
+```Bash
+az network nsg rule create \
+  --resource-group "$RG_NAME" \
+  --nsg-name nsg-backend-a \
+  --name Deny-All-Outbound \
+  --priority 4096 \
+  --direction Outbound \
+  --access Deny \
+  --protocol '*' \
+  --source-address-prefix '*' \
+  --source-port-range '*' \
+  --destination-address-prefix '*' \
+  --destination-port-range '*'
+```
+## vérifier le résultat avec
+```Bash
+az network nsg rule list \
+  --resource-group "$RG_NAME" \
+  --nsg-name nsg-backend-a \
+  --query "[].{Name:name, Priority:priority, Direction:direction, Access:access, Source:sourceAddressPrefix, Dest:destinationAddressPrefix, DestPort:destinationPortRange}" \
+  --output table
+```
+### résulta :
+```Bash
+Name                             Priority    Direction    Access    Source       Dest         DestPort
+-------------------------------  ----------  -----------  --------  -----------  -----------  ----------
+Allow-HTTP-From-AppGW            100         Inbound      Allow     10.0.1.0/24  10.0.2.0/24  80
+Allow-SSH-From-Jumpbox           110         Inbound      Allow     10.0.4.0/24  10.0.2.0/24  22
+Allow-HTTP-From-Jumpbox-LabTest  115         Inbound      Allow     10.0.4.0/24  10.0.2.0/24  80
+Deny-Test-Port-8080              200         Inbound      Deny      10.0.4.0/24  10.0.2.0/24  8080
+Deny-All-Inbound                 4096        Inbound      Deny      *            *            *
+Deny-All-Outbound                4096        Outbound     Deny      *            *            *
+```
+---
+
+## 3. nsg-backend-b
+```Bash
+APPGW_SUBNET="10.0.1.0/24"
+API_SUBNET="10.0.3.0/24"
+MGMT_SUBNET="10.0.4.0/24"
+```
+### INBOUND
+```Bash
+az network nsg rule create \
+  --resource-group "$RG_NAME" \
+  --nsg-name nsg-backend-b \
+  --name Allow-HTTP-From-AppGW \
+  --priority 100 \
+  --direction Inbound \
+  --access Allow \
+  --protocol Tcp \
+  --source-address-prefix "$APPGW_SUBNET" \
+  --source-port-range '*' \
+  --destination-address-prefix "$API_SUBNET" \
+  --destination-port-range 80
+
+az network nsg rule create \
+  --resource-group "$RG_NAME" \
+  --nsg-name nsg-backend-b \
+  --name Allow-SSH-From-Jumpbox \
+  --priority 110 \
+  --direction Inbound \
+  --access Allow \
+  --protocol Tcp \
+  --source-address-prefix "$MGMT_SUBNET" \
+  --source-port-range '*' \
+  --destination-address-prefix "$API_SUBNET" \
+  --destination-port-range 22
+
+az network nsg rule create \
+  --resource-group "$RG_NAME" \
+  --nsg-name nsg-backend-b \
+  --name Allow-HTTP-From-Jumpbox-LabTest \
+  --priority 115 \
+  --direction Inbound \
+  --access Allow \
+  --protocol Tcp \
+  --source-address-prefix "$MGMT_SUBNET" \
+  --source-port-range '*' \
+  --destination-address-prefix "$API_SUBNET" \
+  --destination-port-range 80
+
+az network nsg rule create \
+  --resource-group "$RG_NAME" \
+  --nsg-name nsg-backend-b \
+  --name Deny-Test-Port-8080 \
+  --priority 200 \
+  --direction Inbound \
+  --access Deny \
+  --protocol Tcp \
+  --source-address-prefix "$MGMT_SUBNET" \
+  --source-port-range '*' \
+  --destination-address-prefix "$API_SUBNET" \
+  --destination-port-range 8080
+
+az network nsg rule create \
+  --resource-group "$RG_NAME" \
+  --nsg-name nsg-backend-b \
+  --name Deny-All-Inbound \
+  --priority 4096 \
+  --direction Inbound \
+  --access Deny \
+  --protocol '*' \
+  --source-address-prefix '*' \
+  --source-port-range '*' \
+  --destination-address-prefix '*' \
+  --destination-port-range '*'
+```
+# OUTBOUND
+```Bash
+az network nsg rule create \
+  --resource-group "$RG_NAME" \
+  --nsg-name nsg-backend-b \
+  --name Deny-All-Outbound \
+  --priority 4096 \
+  --direction Outbound \
+  --access Deny \
+  --protocol '*' \
+  --source-address-prefix '*' \
+  --source-port-range '*' \
+  --destination-address-prefix '*' \
+  --destination-port-range '*'
+```
+## vérifier le résultat avec
+```Bash
+az network nsg rule list \
+  --resource-group "$RG_NAME" \
+  --nsg-name nsg-backend-b \
+  --query "[].{Name:name, Priority:priority, Direction:direction, Access:access, Source:sourceAddressPrefix, Dest:destinationAddressPrefix, DestPort:destinationPortRange}" \
+  --output table
+```
+### résulta :
+```Bash
+Name                             Priority    Direction    Access    Source       Dest         DestPort
+-------------------------------  ----------  -----------  --------  -----------  -----------  ----------
+Allow-HTTP-From-AppGW            100         Inbound      Allow     10.0.1.0/24  10.0.3.0/24  80
+Allow-SSH-From-Jumpbox           110         Inbound      Allow     10.0.4.0/24  10.0.3.0/24  22
+Allow-HTTP-From-Jumpbox-LabTest  115         Inbound      Allow     10.0.4.0/24  10.0.3.0/24  80
+Deny-Test-Port-8080              200         Inbound      Deny      10.0.4.0/24  10.0.3.0/24  8080
+Deny-All-Inbound                 4096        Inbound      Deny      *            *            *
+Deny-All-Outbound                4096        Outbound     Deny      *            *            *
+```
+---
 
 
