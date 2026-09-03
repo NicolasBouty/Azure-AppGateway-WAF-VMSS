@@ -1,30 +1,35 @@
 
 🚀 Step-by-Step Deployment Guide
+---
 Phase 1: Network Foundation Infrastructure
 1. Configuration Variables Setup
-Bash
 
+```Bash
 LOCATION="westeurope"
 RG_NAME="grp_tpaz104-lab"
 VNET_NAME="vnet_tpaz104-lab"
 PIP_NAME="pip-appgw"
-
+```
+---
 2. Resource Group & VNet Creation
-Bash
 
 # Create Resource Group
+```Bash
 az group create \
   --name $RG_NAME \
   --location $LOCATION
+```
 
 # Create VNet and initial AppGW Subnet
+```Bash
 az network vnet create \
   --resource-group $RG_NAME \
   --name $VNET_NAME \
   --address-prefixes 10.0.0.0/16 \
   --subnet-name subnet-appgw \
   --subnet-prefixes 10.0.1.0/24
-
+```
+---
 3. Subnets Creation
 Bash
 
