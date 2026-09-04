@@ -558,21 +558,6 @@ Deny-All-Outbound                    4096        Outbound     Deny      *       
 
 # Phase 3 — Fichiers cloud-init hors ligne
 
-XXX
-refair l'ip public
-LOCATION="westeurope"
-RG_NAME="grp_tpaz104-lab2"
-
-```Bash
- az network public-ip create \
-  --resource-group $RG_NAME \
-  --name pip-appgw \
-  --location $LOCATION \
-  --sku Standard \
-  --allocation-method Static
-```
-XXX
-
 ## 1. Contenu des fichiers
 
 ### cloud-init-web.yaml
@@ -886,9 +871,8 @@ az vmss list-instances \
 ```Bash
 resulta
 ```
+---
 
-
-
-
+# Phase 4
 
 
