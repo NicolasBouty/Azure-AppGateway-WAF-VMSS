@@ -641,6 +641,9 @@ runcmd:
 ---
 
 ## 2. Déploiement des VMSS
+Les VM Scale Sets sont déployés en mode d’orchestration Uniform avec une politique d’upgrade Manual. 
+Le mode Rolling n’est pas activé dans ce lab, car il nécessite une source de santé VMSS — Application Health Extension ou Azure Load Balancer Health Probe — qui n’est pas incluse afin de respecter la contrainte de zéro egress depuis les machines virtuelles. 
+La sonde Application Gateway est utilisée uniquement pour la disponibilité des backends dans le routage applicatif
 ### a. Déploiement initial
 ```Bash
 #!/usr/bin/env bash
@@ -655,7 +658,7 @@ VNET_NAME="vnet_tpaz104-lab"
 
 ADMIN_USER="azureuser"
 SKU_VMSS="Standard_D2als_v7"
-SKU_JUMPBOX="Standard_B1s"
+SKU_JUMPBOX=Standard_D2als_v7"
 IMAGE_UBUNTU="Canonical:ubuntu-24_04-lts:server:latest"
 
 CLOUD_INIT_WEB="cloud-init-web.yaml"
@@ -723,7 +726,7 @@ az vmss create \
   --name vmss-web \
   --location "$LOCATION" \
   --orchestration-mode Uniform \
-  --upgrade-policy-mode Rolling \
+  --upgrade-policy-mode Manual \
   --image "$IMAGE_UBUNTU" \
   --vm-sku "$SKU_VMSS" \
   --instance-count 1 \
@@ -742,7 +745,7 @@ az vmss create \
   --name vmss-api \
   --location "$LOCATION" \
   --orchestration-mode Uniform \
-  --upgrade-policy-mode Rolling \
+  --upgrade-policy-mode Manual \
   --image "$IMAGE_UBUNTU" \
   --vm-sku "$SKU_VMSS" \
   --instance-count 1 \
@@ -852,12 +855,20 @@ az monitor autoscale show \
   --name autoscale-vmss-web \
   --output jsonc
 ```
+### résulta 
+```Bash
+resulta
+```
 ### VMSS API
 ```Bash
   az monitor autoscale show \
   --resource-group "$RG_WORKLOAD" \
   --name autoscale-vmss-api \
   --output jsonc
+```
+### résulta 
+```Bash
+resulta
 ```
 ### Vérifications des instance
 ```Bash
@@ -871,8 +882,10 @@ az vmss list-instances \
   }" \
   --output table
 ```
-
-
+### résulta 
+```Bash
+resulta
+```
 
 
 
