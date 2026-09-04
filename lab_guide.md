@@ -663,6 +663,7 @@ resulta
 Les VM Scale Sets sont déployés en mode d’orchestration Uniform avec une politique d’upgrade Manual. 
 Le mode Rolling n’est pas activé dans ce lab, car il nécessite une source de santé VMSS — Application Health Extension ou Azure Load Balancer Health Probe — qui n’est pas incluse afin de respecter la contrainte de zéro egress depuis les machines virtuelles. 
 La sonde Application Gateway est utilisée uniquement pour la disponibilité des backends dans le routage applicatif
+
 ---
 ## 1. Déploiement initial
 ```Bash
