@@ -638,9 +638,10 @@ runcmd:
   - systemctl daemon-reload
   - systemctl enable --now az104-api.service
 ```
+---
 
- ## 2. Déploiement des VMSS
-
+## 2. Déploiement des VMSS
+### a. Déploiement initial
 ```Bash
 #!/usr/bin/env bash
 set -euo pipefail
@@ -767,15 +768,18 @@ az vm create \
   --subnet "$SUBNET_MGMT_ID" \
   --public-ip-address "" \
   --boot-diagnostics true
+
+# Réduit l'exposition du mot de passe dans l'environnement shell.
+unset ADMIN_PASSWORD
+echo "=== Déploiement des VMSS terminé. ==="
 ```
 
+### b. Autoscale — min. 1 / max. 2 par VMSS
 
-Ajoute Autoscale après le déploiement
+```Bash
+echo "=== Configuration Autoscale du VMSS Web : min=1, max=2 ==="
 
-Ajoute ce bloc après la création des deux VMSS.
-
-bash
-echo "=== Création de l'Autoscale VMSS Web : min 1 / max 2 ==="
+# VMSS WEB
 az monitor autoscale create \
   --resource-group "$RG_WORKLOAD" \
   --resource vmss-web \
@@ -783,9 +787,9 @@ az monitor autoscale create \
   --name autoscale-vmss-web \
   --min-count 1 \
   --max-count 2 \
-  --count 2
+  --count 1
 
-echo "=== Création de l'Autoscale VMSS API : min 1 / max 2 ==="
+# VMSS API
 az monitor autoscale create \
   --resource-group "$RG_WORKLOAD" \
   --resource vmss-api \
@@ -793,12 +797,9 @@ az monitor autoscale create \
   --name autoscale-vmss-api \
   --min-count 1 \
   --max-count 2 \
-  --count 2
+  --count 1
 
-
-VMSS Web
-
-bash
+# VMSS WEB
 # Ajouter une instance si CPU moyenne > 70 % pendant 5 min
 az monitor autoscale rule create \
   --resource-group "$RG_WORKLOAD" \
@@ -815,10 +816,7 @@ az monitor autoscale rule create \
   --scale in 1 \
   --cooldown 10
 
-
-VMSS API
-
-bash
+# VMSS API
 # Ajouter une instance si CPU moyenne > 70 % pendant 5 min
 az monitor autoscale rule create \
   --resource-group "$RG_WORKLOAD" \
@@ -834,3 +832,6 @@ az monitor autoscale rule create \
   --condition "Percentage CPU < 30 avg 10m" \
   --scale in 1 \
   --cooldown 10
+
+echo "=== Configuration Autoscale du VMSS Web : terminé ==="
+```
