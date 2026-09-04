@@ -645,6 +645,8 @@ runcmd:
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Variables
+
 RG_NETWORK="grp_tpaz104-lab"
 RG_WORKLOAD="grp_tpaz104-lab2"
 LOCATION="westeurope"
@@ -654,14 +656,36 @@ ADMIN_USER="azureuser"
 SKU_VMSS="Standard_D2als_v7"
 SKU_JUMPBOX="Standard_B1s"
 IMAGE_UBUNTU="Canonical:ubuntu-24_04-lts:server:latest"
-SSH_PUBLIC_KEY="$HOME/.ssh/id_rsa.pub"
 
-if [ ! -f "$SSH_PUBLIC_KEY" ]; then
-  ssh-keygen -t rsa -b 4096 -N "" -f "$HOME/.ssh/id_rsa"
+CLOUD_INIT_WEB="cloud-init-web.yaml"
+CLOUD_INIT_API="cloud-init-api.yaml"
+
+# Contrôles préalables
+
+for file in "$CLOUD_INIT_WEB" "$CLOUD_INIT_API"; do
+  if [ ! -f "$file" ]; then
+    echo "Erreur : fichier introuvable : $file"
+    exit 1
+  fi
+
+  if ! head -n 1 "$file" | grep -qx '#cloud-config'; then
+    echo "Erreur : $file doit commencer par : #cloud-config"
+    exit 1
+  fi
+done
+
+# Le même mot de passe est utilisé uniquement pour le lab :
+# - console série de la Jumpbox
+# - SSH interne optionnel vers les VMSS
+read -rsp "Mot de passe local pour Jumpbox et VMSS : " ADMIN_PASSWORD
+echo
+
+if [ -z "$ADMIN_PASSWORD" ]; then
+  echo "Erreur : le mot de passe ne peut pas être vide."
+  exit 1
 fi
 
-read -rsp "Mot de passe local de la Jumpbox : " JUMPBOX_PASSWORD
-echo
+# IDs des subnets — VNet dans le RG réseau
 
 SUBNET_WEB_ID=$(az network vnet subnet show \
   --resource-group "$RG_NETWORK" \
@@ -684,7 +708,15 @@ SUBNET_MGMT_ID=$(az network vnet subnet show \
   --query id \
   --output tsv)
 
+if [ -z "$SUBNET_WEB_ID" ] || [ -z "$SUBNET_API_ID" ] || [ -z "$SUBNET_MGMT_ID" ]; then
+  echo "Erreur : impossible de récupérer au moins un ID de subnet."
+  exit 1
+fi
+
+# VMSS Web
+
 echo "=== Création du VMSS Web ==="
+
 az vmss create \
   --resource-group "$RG_WORKLOAD" \
   --name vmss-web \
@@ -695,11 +727,15 @@ az vmss create \
   --vm-sku "$SKU_VMSS" \
   --instance-count 1 \
   --admin-username "$ADMIN_USER" \
-  --ssh-key-values "$SSH_PUBLIC_KEY" \
+  --admin-password "$ADMIN_PASSWORD" \
+  --authentication-type password \
   --subnet "$SUBNET_WEB_ID" \
-  --custom-data cloud-init-web.yaml
+  --custom-data "$CLOUD_INIT_WEB"
+
+# VMSS API
 
 echo "=== Création du VMSS API ==="
+
 az vmss create \
   --resource-group "$RG_WORKLOAD" \
   --name vmss-api \
@@ -710,11 +746,15 @@ az vmss create \
   --vm-sku "$SKU_VMSS" \
   --instance-count 1 \
   --admin-username "$ADMIN_USER" \
-  --ssh-key-values "$SSH_PUBLIC_KEY" \
+  --admin-password "$ADMIN_PASSWORD" \
+  --authentication-type password \
   --subnet "$SUBNET_API_ID" \
-  --custom-data cloud-init-api.yaml
+  --custom-data "$CLOUD_INIT_API"
+
+# Jumpbox
 
 echo "=== Création de la Jumpbox privée ==="
+
 az vm create \
   --resource-group "$RG_WORKLOAD" \
   --name vm-jumpbox \
@@ -722,15 +762,11 @@ az vm create \
   --image "$IMAGE_UBUNTU" \
   --size "$SKU_JUMPBOX" \
   --admin-username "$ADMIN_USER" \
-  --admin-password "$JUMPBOX_PASSWORD" \
+  --admin-password "$ADMIN_PASSWORD" \
   --authentication-type password \
   --subnet "$SUBNET_MGMT_ID" \
   --public-ip-address "" \
   --boot-diagnostics true
-
-unset JUMPBOX_PASSWORD
-
-echo "=== Déploiement des VMSS et de la Jumpbox terminé. ==="
 ```
 
 
