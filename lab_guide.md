@@ -664,6 +664,39 @@ nicolas [ ~ ]$ ls -l cloud-init-*.yaml
 
 # Phase 4. Créer et exporter le certificat 
 
+## Créé le certificat
+```Powershell
+$PfxPassword = Read-Host `
+  -AsSecureString `
+  "Mot de passe à définir pour appgw.pfx"
+
+$Cert = New-SelfSignedCertificate `
+  -Subject "CN=appgw-lab.local" `
+  -DnsName "appgw-lab.local" `
+  -CertStoreLocation "Cert:\CurrentUser\My" `
+  -FriendlyName "AZ-104 Lab Application Gateway" `
+  -Type SSLServerAuthentication `
+  -KeyExportPolicy Exportable `
+  -KeyLength 2048 `
+  -KeyAlgorithm RSA `
+  -HashAlgorithm SHA256 `
+  -Provider "Microsoft Software Key Storage Provider" `
+  -NotAfter (Get-Date).AddYears(1)
+
+if ($null -eq $Cert -or -not $Cert.HasPrivateKey) {
+    throw "Échec de création du certificat avec clé privée."
+}
+
+$PfxPath = Join-Path $HOME "Downloads\appgw.pfx"
+
+Export-PfxCertificate `
+  -Cert $Cert `
+  -FilePath $PfxPath `
+  -Password $PfxPassword
+
+Get-Item $PfxPath |
+  Select-Object Name, FullName, Length, LastWriteTime
+```
 
 
 
