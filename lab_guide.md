@@ -664,6 +664,9 @@ nicolas [ ~ ]$ ls -l cloud-init-*.yaml
 
 # Phase 4. Créer et exporter le certificat 
 
+Le certificat appgw.pfx est généré localement pour le lab et n’est pas versionné, car il contient une clé privée. 
+Il est importé manuellement dans Azure Cloud Shell au moment du déploiement
+
 ## 1. Créé le certificat
 ```Powershell
 $PfxPassword = Read-Host `
@@ -728,11 +731,221 @@ ls -l ~/appgw.pfx
 ```Bash
 -rw------- 1 nicolas nicolas 2722 Sep  4 12:59 /home/nicolas/appgw.pfx
 ```
+---
+
+# Phase 5. Déploiement de l'Appliquation-Gateway
+
+## 1. Déploiement initial
+```Bash
+cat <<'EOF' > deploy-appgw-base.sh
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Variables
+
+RG_NETWORK="grp_tpaz104-lab"
+RG_WORKLOAD="grp_tpaz104-lab2"
+LOCATION="westeurope"
+VNET_NAME="vnet_tpaz104-lab"
+
+APPGW_NAME="appgw-lab"
+PUBLIC_IP_NAME="pip-appgw"
+WAF_POLICY_NAME="waf-policy-lab"
+
+APPGW_SUBNET_NAME="subnet-appgw"
+
+# Backend temporaire obligatoire pour créer le squelette App Gateway.
+# Il sera supprimé / remplacé après l'association des VMSS aux pools dédiés.
+PLACEHOLDER_BACKEND="10.0.2.4"
+
+# Certificat PFX déjà uploadé dans Cloud Shell.
+PFX_FILE="$HOME/appgw.pfx"
+
+# Vérifications préalables
+
+echo "=== Vérification des prérequis ==="
+
+az group show \
+  --name "$RG_NETWORK" \
+  --output none
+
+az group show \
+  --name "$RG_WORKLOAD" \
+  --output none
+
+if [ ! -f "$PFX_FILE" ]; then
+  echo "Erreur : certificat PFX introuvable : $PFX_FILE"
+  exit 1
+fi
+
+if [ ! -s "$PFX_FILE" ]; then
+  echo "Erreur : certificat PFX vide : $PFX_FILE"
+  exit 1
+fi
+
+SUBNET_APPGW_ID=$(az network vnet subnet show \
+  --resource-group "$RG_NETWORK" \
+  --vnet-name "$VNET_NAME" \
+  --name "$APPGW_SUBNET_NAME" \
+  --query id \
+  --output tsv)
+
+if [ -z "$SUBNET_APPGW_ID" ]; then
+  echo "Erreur : impossible de récupérer l'ID du subnet Application Gateway."
+  exit 1
+fi
+
+echo "Subnet App Gateway : $SUBNET_APPGW_ID"
+
+PUBLIC_IP_INFO=$(az network public-ip show \
+  --resource-group "$RG_WORKLOAD" \
+  --name "$PUBLIC_IP_NAME" \
+  --query "{Name:name,Location:location,SKU:sku.name,Allocation:publicIPAllocationMethod,Assigned:ipConfiguration.id}" \
+  --output json)
+
+echo "Public IP : $PUBLIC_IP_INFO"
+
+PIP_SKU=$(az network public-ip show \
+  --resource-group "$RG_WORKLOAD" \
+  --name "$PUBLIC_IP_NAME" \
+  --query sku.name \
+  --output tsv)
+
+PIP_ALLOCATION=$(az network public-ip show \
+  --resource-group "$RG_WORKLOAD" \
+  --name "$PUBLIC_IP_NAME" \
+  --query publicIPAllocationMethod \
+  --output tsv)
+
+if [ "$PIP_SKU" != "Standard" ] || [ "$PIP_ALLOCATION" != "Static" ]; then
+  echo "Erreur : pip-appgw doit être SKU Standard et allocation Static."
+  exit 1
+fi
+
+# Saisie du mot de passe PFX
+
+read -rsp "Mot de passe du certificat appgw.pfx : " PFX_PASSWORD
+echo
+
+if [ -z "$PFX_PASSWORD" ]; then
+  echo "Erreur : le mot de passe PFX ne peut pas être vide."
+  exit 1
+fi
+
+# Création de la WAF Policy
+
+echo "=== Création de la WAF Policy OWASP 3.2 ==="
+
+az network application-gateway waf-policy create \
+  --resource-group "$RG_WORKLOAD" \
+  --name "$WAF_POLICY_NAME" \
+  --location "$LOCATION" \
+  --type OWASP \
+  --version 3.2
+
+# Création Application Gateway WAF v2
+
+echo "=== Création de l'Application Gateway WAF v2 ==="
+echo "Cette étape peut prendre plusieurs minutes."
+
+az network application-gateway create \
+  --resource-group "$RG_WORKLOAD" \
+  --name "$APPGW_NAME" \
+  --location "$LOCATION" \
+  --sku WAF_v2 \
+  --capacity 2 \
+  --subnet "$SUBNET_APPGW_ID" \
+  --public-ip-address "$PUBLIC_IP_NAME" \
+  --frontend-port 443 \
+  --http-settings-port 80 \
+  --http-settings-protocol Http \
+  --cert-file "$PFX_FILE" \
+  --cert-password "$PFX_PASSWORD" \
+  --waf-policy "$WAF_POLICY_NAME" \
+  --priority 100 \
+  --servers "$PLACEHOLDER_BACKEND"
+
+unset PFX_PASSWORD
+
+# Création des pools backend métier
+
+echo "=== Création du pool backend Web ==="
+
+az network application-gateway address-pool create \
+  --resource-group "$RG_WORKLOAD" \
+  --gateway-name "$APPGW_NAME" \
+  --name pool-web
+
+echo "=== Création du pool backend API ==="
+
+az network application-gateway address-pool create \
+  --resource-group "$RG_WORKLOAD" \
+  --gateway-name "$APPGW_NAME" \
+  --name pool-api
+
+# Vérifications
+
+echo "=== Vérification de l'Application Gateway ==="
+
+az network application-gateway show \
+  --resource-group "$RG_WORKLOAD" \
+  --name "$APPGW_NAME" \
+  --query "{
+    Name:name,
+    Location:location,
+    State:provisioningState,
+    SKU:sku.name,
+    Capacity:sku.capacity,
+    FrontendIPs:frontendIpConfigurations[].{
+      Name:name,
+      PublicIP:publicIPAddress.id,
+      PrivateIP:privateIPAddress
+    },
+    FrontendPorts:frontendPorts[].{
+      Name:name,
+      Port:properties.port
+    },
+    BackendPools:backendAddressPools[].name,
+    Listeners:httpListeners[].name,
+    Rules:requestRoutingRules[].{
+      Name:name,
+      Type:ruleType,
+      Priority:priority
+    }
+  }" \
+  --output jsonc
+
+echo "=== Vérification des pools backend ==="
+
+az network application-gateway address-pool list \
+  --resource-group "$RG_WORKLOAD" \
+  --gateway-name "$APPGW_NAME" \
+  --query "[].{
+    Name:name,
+    Backends:backendAddresses
+  }" \
+  --output table
+
+echo "=== Socle Application Gateway créé avec succès. ==="
+EOF
+
+chmod +x deploy-appgw-base.sh
+```
+## 2. lancer le script
+```Bash
+./deploy-appgw-base.sh
+```
+## 3. résultat
+```Bash
+résultat
+```
+
+
 
 
 ---
 
-# Phase 5. Déploiement des VMSS
+# Phase 6. Déploiement des VMSS
 Les VM Scale Sets sont déployés en mode d’orchestration Uniform avec une politique d’upgrade Manual. 
 Le mode Rolling n’est pas activé dans ce lab, car il nécessite une source de santé VMSS — Application Health Extension ou Azure Load Balancer Health Probe — qui n’est pas incluse afin de respecter la contrainte de zéro egress depuis les machines virtuelles. 
 La sonde Application Gateway est utilisée uniquement pour la disponibilité des backends dans le routage applicatif
