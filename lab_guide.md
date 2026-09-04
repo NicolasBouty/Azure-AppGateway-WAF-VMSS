@@ -613,6 +613,7 @@ runcmd:
   - chmod 0644 /srv/az104/web/index.html
   - systemctl daemon-reload
   - systemctl enable --now az104-web.service
+EOF
 ```
 
 ### cloud-init-api.yaml
@@ -655,11 +656,20 @@ ls -l cloud-init-*.yaml
 ```
 ### résulta 
 ```Bash
-resulta
+nicolas [ ~ ]$ ls -l cloud-init-*.yaml
+-rw-r--r-- 1 nicolas nicolas 839 Sep  4 11:21 cloud-init-api.yaml
+-rw-r--r-- 1 nicolas nicolas 662 Sep  4 11:21 cloud-init-web.yaml
 ```
 ---
 
-# Phase 4. Déploiement des VMSS
+# Phase 4. Créer et exporter le certificat 
+
+
+
+
+---
+
+# Phase 5. Déploiement des VMSS
 Les VM Scale Sets sont déployés en mode d’orchestration Uniform avec une politique d’upgrade Manual. 
 Le mode Rolling n’est pas activé dans ce lab, car il nécessite une source de santé VMSS — Application Health Extension ou Azure Load Balancer Health Probe — qui n’est pas incluse afin de respecter la contrainte de zéro egress depuis les machines virtuelles. 
 La sonde Application Gateway est utilisée uniquement pour la disponibilité des backends dans le routage applicatif
@@ -679,7 +689,7 @@ VNET_NAME="vnet_tpaz104-lab"
 
 ADMIN_USER="azureuser"
 SKU_VMSS="Standard_D2als_v7"
-SKU_JUMPBOX=Standard_D2als_v7"
+SKU_JUMPBOX="Standard_D2als_v7"
 IMAGE_UBUNTU="Canonical:ubuntu-24_04-lts:server:latest"
 
 CLOUD_INIT_WEB="cloud-init-web.yaml"
@@ -809,6 +819,17 @@ az network public-ip list \
   }" \
   --output table
 ```
+
+### résulta 
+```Bash
+Name                IP
+------------------  -------------
+pip-appgw           51.124.223.4
+vmss-apiLBPublicIP  20.107.14.118
+vmss-webLBPublicIP  20.229.53.63
+nicolas [ ~ ]$ 
+```
+
 ---
 ## 2. Autoscale — min. 1 / max. 2 par VMSS
 Le VMSS est configuré pour un scale-out à deux instances lorsque la moyenne CPU dépasse 70% pendant cinq minutes, et un scale-in lorsqu’elle passe sous 30% pendant dix minutes. 
@@ -909,6 +930,6 @@ resulta
 ```
 ---
 
-# Phase 5
+# Phase 6
 
 
