@@ -723,7 +723,7 @@ az vmss create \
   --name vmss-web \
   --location "$LOCATION" \
   --orchestration-mode Uniform \
-  --upgrade-policy-mode Manual \
+  --upgrade-policy-mode Rolling \
   --image "$IMAGE_UBUNTU" \
   --vm-sku "$SKU_VMSS" \
   --instance-count 1 \
@@ -742,7 +742,7 @@ az vmss create \
   --name vmss-api \
   --location "$LOCATION" \
   --orchestration-mode Uniform \
-  --upgrade-policy-mode Manual \
+  --upgrade-policy-mode Rolling \
   --image "$IMAGE_UBUNTU" \
   --vm-sku "$SKU_VMSS" \
   --instance-count 1 \
@@ -772,14 +772,27 @@ az vm create \
 # Réduit l'exposition du mot de passe dans l'environnement shell.
 unset ADMIN_PASSWORD
 echo "=== Déploiement des VMSS terminé. ==="
+
+#Assurer l’absence d’IP publique VMSS
+echo "=== Vérification : aucune IP publique sur les VMSS et la Jumpbox ==="
+
+az network public-ip list \
+  --query "[].{
+    Name:name,
+    ResourceGroup:resourceGroup,
+    IP:ipAddress,
+    AttachedTo:ipConfiguration.id
+  }" \
+  --output table
 ```
 
 ### b. Autoscale — min. 1 / max. 2 par VMSS
+Le VMSS est configuré pour un scale-out à deux instances lorsque la moyenne CPU dépasse 70% pendant cinq minutes, et un scale-in lorsqu’elle passe sous 30% pendant dix minutes. 
+Le lab ne génère pas artificiellement de charge : cette étape valide la configuration Azure Monitor Autoscale, pas le déclenchement effectif de la règle
 
 ```Bash
-echo "=== Configuration Autoscale du VMSS Web : min=1, max=2 ==="
+echo "=== Configuration Autoscale : VMSS Web (min=1, max=2) ==="
 
-# VMSS WEB
 az monitor autoscale create \
   --resource-group "$RG_WORKLOAD" \
   --resource vmss-web \
@@ -789,7 +802,22 @@ az monitor autoscale create \
   --max-count 2 \
   --count 1
 
-# VMSS API
+az monitor autoscale rule create \
+  --resource-group "$RG_WORKLOAD" \
+  --autoscale-name autoscale-vmss-web \
+  --condition "Percentage CPU > 70 avg 5m" \
+  --scale out 1 \
+  --cooldown 5
+
+az monitor autoscale rule create \
+  --resource-group "$RG_WORKLOAD" \
+  --autoscale-name autoscale-vmss-web \
+  --condition "Percentage CPU < 30 avg 10m" \
+  --scale in 1 \
+  --cooldown 10
+
+echo "=== Configuration Autoscale : VMSS API (min=1, max=2) ==="
+
 az monitor autoscale create \
   --resource-group "$RG_WORKLOAD" \
   --resource vmss-api \
@@ -799,25 +827,6 @@ az monitor autoscale create \
   --max-count 2 \
   --count 1
 
-# VMSS WEB
-# Ajouter une instance si CPU moyenne > 70 % pendant 5 min
-az monitor autoscale rule create \
-  --resource-group "$RG_WORKLOAD" \
-  --autoscale-name autoscale-vmss-web \
-  --condition "Percentage CPU > 70 avg 5m" \
-  --scale out 1 \
-  --cooldown 5
-
-# Retirer une instance si CPU moyenne < 30 % pendant 10 min
-az monitor autoscale rule create \
-  --resource-group "$RG_WORKLOAD" \
-  --autoscale-name autoscale-vmss-web \
-  --condition "Percentage CPU < 30 avg 10m" \
-  --scale in 1 \
-  --cooldown 10
-
-# VMSS API
-# Ajouter une instance si CPU moyenne > 70 % pendant 5 min
 az monitor autoscale rule create \
   --resource-group "$RG_WORKLOAD" \
   --autoscale-name autoscale-vmss-api \
@@ -825,7 +834,6 @@ az monitor autoscale rule create \
   --scale out 1 \
   --cooldown 5
 
-# Retirer une instance si CPU moyenne < 30 % pendant 10 min
 az monitor autoscale rule create \
   --resource-group "$RG_WORKLOAD" \
   --autoscale-name autoscale-vmss-api \
@@ -833,5 +841,41 @@ az monitor autoscale rule create \
   --scale in 1 \
   --cooldown 10
 
-echo "=== Configuration Autoscale du VMSS Web : terminé ==="
+echo "=== Autoscale configuré : min=1 / défaut=1 / max=2 pour VMSS WEB et API ==="
 ```
+
+### Vérifications d'Autoscale
+### VMSS WEB
+```Bash
+az monitor autoscale show \
+  --resource-group "$RG_WORKLOAD" \
+  --name autoscale-vmss-web \
+  --output jsonc
+```
+### VMSS API
+```Bash
+  az monitor autoscale show \
+  --resource-group "$RG_WORKLOAD" \
+  --name autoscale-vmss-api \
+  --output jsonc
+```
+### Vérifications des instance
+```Bash
+az vmss list-instances \
+  --resource-group "$RG_WORKLOAD" \
+  --name vmss-web \
+  --query "[].{
+    Instance:instanceId,
+    Provisioning:provisioningState,
+    Power:powerState
+  }" \
+  --output table
+```
+
+
+
+
+
+
+
+
