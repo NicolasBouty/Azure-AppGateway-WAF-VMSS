@@ -562,6 +562,7 @@ Deny-All-Outbound                    4096        Outbound     Deny      *       
 
 ### cloud-init-web.yaml
 ```yaml
+cat <<'EOF' > cloud-init-web.yaml
 #cloud-config
 
 write_files:
@@ -593,6 +594,7 @@ runcmd:
 
 ### cloud-init-api.yaml
 ```yaml
+cat <<'EOF' > cloud-init-api.yaml
 #cloud-config
 
 write_files:
@@ -622,6 +624,15 @@ runcmd:
   - chmod 0644 /srv/az104/api/index.html /srv/az104/api/api/index.html /srv/az104/api/api/health
   - systemctl daemon-reload
   - systemctl enable --now az104-api.service
+EOF
+```
+### vérification
+```Bash
+ls -l cloud-init-*.yaml
+```
+### résulta 
+```Bash
+resulta
 ```
 ---
 
