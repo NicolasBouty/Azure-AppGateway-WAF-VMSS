@@ -584,7 +584,7 @@ Les deux configurations injectent un service Systemd garantissant la haute dispo
 ## 1. Contenu des fichiers
 
 ### cloud-init-web.yaml
-```yaml
+```bash
 cat <<'EOF' > cloud-init-web.yaml
 #cloud-config
 
@@ -617,7 +617,7 @@ EOF
 ```
 
 ### cloud-init-api.yaml
-```yaml
+```bash
 cat <<'EOF' > cloud-init-api.yaml
 #cloud-config
 
@@ -931,15 +931,23 @@ EOF
 
 chmod +x deploy-appgw-base.sh
 ```
+
 ## 2. lancer le script
 ```Bash
 ./deploy-appgw-base.sh
 ```
+
 ## 3. résultatt
 ```Bash
 résultat
 ```
-
+## 4. Policy basculée en Prevention
+```Bash
+az network application-gateway waf-policy policy-setting update \
+  --resource-group "$RG_WORKLOAD" \
+  --policy-name waf-policy-lab \
+  --mode Prevention
+```
 
 
 
