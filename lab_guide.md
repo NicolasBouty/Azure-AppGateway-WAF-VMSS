@@ -117,7 +117,7 @@ az network public-ip create \
 ```
 ---
 
-# ✅ Phase 1 — Verification & Proofs
+# ✅ Phase 1 — Vérification & Proofs
 
 ## Subnet & NSG Association Check
 ```Bash
