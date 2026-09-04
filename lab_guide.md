@@ -558,6 +558,7 @@ Deny-All-Outbound                    4096        Outbound     Deny      *       
 
 # Phase 3 — Fichiers cloud-init hors ligne
 
+XXX
 refair l'ip public
 LOCATION="westeurope"
 RG_NAME="grp_tpaz104-lab2"
@@ -570,6 +571,7 @@ RG_NAME="grp_tpaz104-lab2"
   --sku Standard \
   --allocation-method Static
 ```
+XXX
 
 ## 1. Contenu des fichiers
 
