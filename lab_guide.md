@@ -663,6 +663,7 @@ resulta
 Les VM Scale Sets sont déployés en mode d’orchestration Uniform avec une politique d’upgrade Manual. 
 Le mode Rolling n’est pas activé dans ce lab, car il nécessite une source de santé VMSS — Application Health Extension ou Azure Load Balancer Health Probe — qui n’est pas incluse afin de respecter la contrainte de zéro egress depuis les machines virtuelles. 
 La sonde Application Gateway est utilisée uniquement pour la disponibilité des backends dans le routage applicatif
+---
 ## 1. Déploiement initial
 ```Bash
 #!/usr/bin/env bash
@@ -807,7 +808,7 @@ az network public-ip list \
   }" \
   --output table
 ```
-
+---
 ## 2. Autoscale — min. 1 / max. 2 par VMSS
 Le VMSS est configuré pour un scale-out à deux instances lorsque la moyenne CPU dépasse 70% pendant cinq minutes, et un scale-in lorsqu’elle passe sous 30% pendant dix minutes. 
 Le lab ne génère pas artificiellement de charge : cette étape valide la configuration Azure Monitor Autoscale, pas le déclenchement effectif de la règle
