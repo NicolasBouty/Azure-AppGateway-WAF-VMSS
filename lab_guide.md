@@ -664,7 +664,7 @@ nicolas [ ~ ]$ ls -l cloud-init-*.yaml
 
 # Phase 4. Créer et exporter le certificat 
 
-## Créé le certificat
+## 1. Créé le certificat
 ```Powershell
 $PfxPassword = Read-Host `
   -AsSecureString `
@@ -698,6 +698,36 @@ Get-Item $PfxPath |
   Select-Object Name, FullName, Length, LastWriteTime
 ```
 
+## 2. transférer le PFX vers Cloud Shell
+Pour permettre aux scripts d'automatisation d'accéder au certificat lors de la configuration d'Azure Application Gateway, le fichier PFX généré localement doit être transféré vers l'environnement Cloud Shell :
+
+1. Accédez à **Azure Cloud Shell** depuis le portail Azure.
+2. Dans la barre d'outils supérieure de la console, cliquez sur l'icône **Upload/Download files** (icône représentant des flèches vers le haut et le bas).
+3. Sélectionnez **Upload**.
+4. Naviguez dans votre système local et sélectionnez le fichier :
+   `<CHEMIN_VERS_FICHIER>\appgw.pfx`
+
+### vérification
+```Bash
+ls -lh ~/appgw.pfx
+```
+### résulta 
+```Bash
+-rw-r--r-- 1 nicolas nicolas 2.7K Sep  4 12:59 /home/nicolas/appgw.pfx
+```
+
+## 3. Protéger le fichier dans Cloud Shell
+```Bash
+chmod 600 ~/appgw.pfx
+```
+### vérification
+```Bash
+ls -l ~/appgw.pfx
+```
+### résulta 
+```Bash
+-rw------- 1 nicolas nicolas 2722 Sep  4 12:59 /home/nicolas/appgw.pfx
+```
 
 
 ---
