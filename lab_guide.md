@@ -736,6 +736,11 @@ ls -l ~/appgw.pfx
 # Phase 5. Déploiement de l'Appliquation-Gateway
 
 ## 1. Déploiement initial
+
+10.0.2.4 est un backend temporaire de bootstrap.
+Il ne représente pas une instance VMSS permanente.
+Il sera remplacé par pool-web et pool-api.
+
 ```Bash
 cat <<'EOF' > deploy-appgw-base.sh
 #!/usr/bin/env bash
@@ -936,17 +941,134 @@ chmod +x deploy-appgw-base.sh
 ```Bash
 ./deploy-appgw-base.sh
 ```
-
-## 3. résultatt
+### résultat
 ```Bash
 résultat
 ```
-## 4. Policy basculée en Prevention
+
+## 3. Policy basculée en Prevention
 ```Bash
 az network application-gateway waf-policy policy-setting update \
   --resource-group "$RG_WORKLOAD" \
   --policy-name waf-policy-lab \
   --mode Prevention
+```
+
+## 4. Ajouter le frontend privé
+```Bash
+az network application-gateway frontend-ip create \
+  --resource-group "$RG_WORKLOAD" \
+  --gateway-name appgw-lab \
+  --name private-frontend-ip \
+  --private-ip-address 10.0.1.10
+```
+### vérification
+```Bash
+az network application-gateway frontend-ip list \
+  --resource-group "$RG_WORKLOAD" \
+  --gateway-name appgw-lab \
+  --output table
+```
+### résultat
+```Bash
+résultat
+```
+
+## 4. Créer les probes
+```Bash
+# Probe Web
+az network application-gateway probe create \
+  --resource-group "$RG_WORKLOAD" \
+  --gateway-name appgw-lab \
+  --name probe-web \
+  --protocol Http \
+  --host 127.0.0.1 \
+  --path / \
+  --port 80 \
+  --interval 30 \
+  --timeout 30 \
+  --threshold 3 \
+  --match-status-codes 200-399
+
+# Probe API :
+az network application-gateway probe create \
+  --resource-group "$RG_WORKLOAD" \
+  --gateway-name appgw-lab \
+  --name probe-api \
+  --protocol Http \
+  --host 127.0.0.1 \
+  --path /api/health \
+  --port 80 \
+  --interval 30 \
+  --timeout 30 \
+  --threshold 3 \
+  --match-status-codes 200-399
+```
+
+## 5. Créer les HTTP settings
+```Bash
+az network application-gateway http-settings create \
+  --resource-group "$RG_WORKLOAD" \
+  --gateway-name appgw-lab \
+  --name http-setting-web \
+  --port 80 \
+  --protocol Http \
+  --timeout 30 \
+  --probe probe-web
+
+az network application-gateway http-settings create \
+  --resource-group "$RG_WORKLOAD" \
+  --gateway-name appgw-lab \
+  --name http-setting-api \
+  --port 80 \
+  --protocol Http \
+  --timeout 30 \
+  --probe probe-api
+```
+
+## 6. Créer le port frontend HTTP
+```Bash
+az network application-gateway frontend-port create \
+  --resource-group "$RG_WORKLOAD" \
+  --gateway-name appgw-lab \
+  --name port-80 \
+  --port 80
+```
+Le port 443 a normalement déjà été créé par la commande initiale ; vérifie son nom avec :
+```Bash
+az network application-gateway frontend-port list \
+  --resource-group "$RG_WORKLOAD" \
+  --gateway-name appgw-lab \
+  --output table
+```
+### résultat
+```Bash
+résultat
+```
+
+## 7. Créer le listener privé
+```Bash
+az network application-gateway http-listener create \
+  --resource-group "$RG_WORKLOAD" \
+  --gateway-name appgw-lab \
+  --name private-http-listener \
+  --frontend-port port-80 \
+  --frontend-ip private-frontend-ip
+```
+
+## 8. Créer les URL path maps
+La map publique :
+```text
+map-public
+  /*       → pool-web + http-setting-web
+  /api/*   → pool-api + http-setting-api
+```
+
+La map privée :
+```text
+map-private
+  /*       → pool-web + http-setting-web
+  /api/*   → pool-api + http-setting-api
 ```
 
 
