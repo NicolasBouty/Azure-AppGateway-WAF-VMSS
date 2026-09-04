@@ -321,19 +321,6 @@ az network nsg rule create \
 az network nsg rule create \
   --resource-group "$RG_NAME" \
   --nsg-name nsg-backend-a \
-  --name Allow-HTTP-From-Jumpbox-LabTest \
-  --priority 115 \
-  --direction Inbound \
-  --access Allow \
-  --protocol Tcp \
-  --source-address-prefix "$MGMT_SUBNET" \
-  --source-port-range '*' \
-  --destination-address-prefix "$WEB_SUBNET" \
-  --destination-port-range 80
-
-az network nsg rule create \
-  --resource-group "$RG_NAME" \
-  --nsg-name nsg-backend-a \
   --name Deny-Test-Port-8080 \
   --priority 200 \
   --direction Inbound \
@@ -386,7 +373,6 @@ Name                             Priority    Direction    Access    Source      
 -------------------------------  ----------  -----------  --------  -----------  -----------  ----------
 Allow-HTTP-From-AppGW            100         Inbound      Allow     10.0.1.0/24  10.0.2.0/24  80
 Allow-SSH-From-Jumpbox           110         Inbound      Allow     10.0.4.0/24  10.0.2.0/24  22
-Allow-HTTP-From-Jumpbox-LabTest  115         Inbound      Allow     10.0.4.0/24  10.0.2.0/24  80
 Deny-Test-Port-8080              200         Inbound      Deny      10.0.4.0/24  10.0.2.0/24  8080
 Deny-All-Inbound                 4096        Inbound      Deny      *            *            *
 Deny-All-Outbound                4096        Outbound     Deny      *            *            *
@@ -426,19 +412,6 @@ az network nsg rule create \
   --source-port-range '*' \
   --destination-address-prefix "$API_SUBNET" \
   --destination-port-range 22
-
-az network nsg rule create \
-  --resource-group "$RG_NAME" \
-  --nsg-name nsg-backend-b \
-  --name Allow-HTTP-From-Jumpbox-LabTest \
-  --priority 115 \
-  --direction Inbound \
-  --access Allow \
-  --protocol Tcp \
-  --source-address-prefix "$MGMT_SUBNET" \
-  --source-port-range '*' \
-  --destination-address-prefix "$API_SUBNET" \
-  --destination-port-range 80
 
 az network nsg rule create \
   --resource-group "$RG_NAME" \
@@ -495,7 +468,6 @@ Name                             Priority    Direction    Access    Source      
 -------------------------------  ----------  -----------  --------  -----------  -----------  ----------
 Allow-HTTP-From-AppGW            100         Inbound      Allow     10.0.1.0/24  10.0.3.0/24  80
 Allow-SSH-From-Jumpbox           110         Inbound      Allow     10.0.4.0/24  10.0.3.0/24  22
-Allow-HTTP-From-Jumpbox-LabTest  115         Inbound      Allow     10.0.4.0/24  10.0.3.0/24  80
 Deny-Test-Port-8080              200         Inbound      Deny      10.0.4.0/24  10.0.3.0/24  8080
 Deny-All-Inbound                 4096        Inbound      Deny      *            *            *
 Deny-All-Outbound                4096        Outbound     Deny      *            *            *
@@ -555,19 +527,6 @@ az network nsg rule create \
 az network nsg rule create \
   --resource-group "$RG_NAME" \
   --nsg-name nsg-mgmt \
-  --name Allow-HTTP-To-Backends-LabTest \
-  --priority 120 \
-  --direction Outbound \
-  --access Allow \
-  --protocol Tcp \
-  --source-address-prefix "$MGMT_SUBNET" \
-  --source-port-range '*' \
-  --destination-address-prefixes "$WEB_SUBNET" "$API_SUBNET" \
-  --destination-port-range 80
-
-az network nsg rule create \
-  --resource-group "$RG_NAME" \
-  --nsg-name nsg-mgmt \
   --name Deny-All-Outbound \
   --priority 4096 \
   --direction Outbound \
@@ -593,7 +552,6 @@ Name                                 Priority    Direction    Access    Source  
 Deny-All-Inbound                     4096        Inbound      Deny      *            *                        *
 Allow-SSH-To-Backends                100         Outbound     Allow     10.0.4.0/24  10.0.2.0/24,10.0.3.0/24  22
 Allow-HTTP-To-AppGW-PrivateFrontend  110         Outbound     Allow     10.0.4.0/24  10.0.1.10                80
-Allow-HTTP-To-Backends-LabTest       120         Outbound     Allow     10.0.4.0/24  10.0.2.0/24,10.0.3.0/24  80
 Deny-All-Outbound                    4096        Outbound     Deny      *            *                        *
 ```
 ---
