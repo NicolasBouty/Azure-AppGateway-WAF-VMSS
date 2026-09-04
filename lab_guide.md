@@ -270,7 +270,7 @@ az network nsg rule list \
   --query "[].{Name:name, Priority:priority, Direction:direction, Access:access, Source:sourceAddressPrefix, Dest:destinationAddressPrefix, DestPort:destinationPortRange}" \
   --output table
 ```
-## résulta :
+## résultat :
 ```Bash
 Name                             Priority    Direction    Access    Source             Dest            DestPort
 -------------------------------  ----------  -----------  --------  -----------------  --------------  -----------
@@ -367,7 +367,7 @@ az network nsg rule list \
   --query "[].{Name:name, Priority:priority, Direction:direction, Access:access, Source:sourceAddressPrefix, Dest:destinationAddressPrefix, DestPort:destinationPortRange}" \
   --output table
 ```
-## résulta :
+## résultat :
 ```Bash
 Name                             Priority    Direction    Access    Source       Dest         DestPort
 -------------------------------  ----------  -----------  --------  -----------  -----------  ----------
@@ -462,7 +462,7 @@ az network nsg rule list \
   --query "[].{Name:name, Priority:priority, Direction:direction, Access:access, Source:sourceAddressPrefix, Dest:destinationAddressPrefix, DestPort:destinationPortRange}" \
   --output table
 ```
-## résulta :
+## résultat :
 ```Bash
 Name                             Priority    Direction    Access    Source       Dest         DestPort
 -------------------------------  ----------  -----------  --------  -----------  -----------  ----------
@@ -545,7 +545,7 @@ az network nsg rule list \
   --query "[].{Name:name, Priority:priority, Direction:direction, Access:access, Source:sourceAddressPrefix || join(',', sourceAddressPrefixes), Dest:destinationAddressPrefix || join(',', destinationAddressPrefixes), DestPort:destinationPortRange}" \
   --output table
 ```
-## résulta :
+## résultat :
 ```Bash
 Name                                 Priority    Direction    Access    Source       Dest                     DestPort
 -----------------------------------  ----------  -----------  --------  -----------  -----------------------  ----------
@@ -654,7 +654,7 @@ EOF
 ```Bash
 ls -l cloud-init-*.yaml
 ```
-### résulta 
+### résultat 
 ```Bash
 nicolas [ ~ ]$ ls -l cloud-init-*.yaml
 -rw-r--r-- 1 nicolas nicolas 839 Sep  4 11:21 cloud-init-api.yaml
@@ -714,7 +714,7 @@ Pour permettre aux scripts d'automatisation d'accéder au certificat lors de la 
 ```Bash
 ls -lh ~/appgw.pfx
 ```
-### résulta 
+### résultat 
 ```Bash
 -rw-r--r-- 1 nicolas nicolas 2.7K Sep  4 12:59 /home/nicolas/appgw.pfx
 ```
@@ -727,7 +727,7 @@ chmod 600 ~/appgw.pfx
 ```Bash
 ls -l ~/appgw.pfx
 ```
-### résulta 
+### résultat 
 ```Bash
 -rw------- 1 nicolas nicolas 2722 Sep  4 12:59 /home/nicolas/appgw.pfx
 ```
@@ -935,7 +935,7 @@ chmod +x deploy-appgw-base.sh
 ```Bash
 ./deploy-appgw-base.sh
 ```
-## 3. résultat
+## 3. résultatt
 ```Bash
 résultat
 ```
@@ -1096,7 +1096,7 @@ az network public-ip list \
   --output table
 ```
 
-### résulta 
+### résultat
 ```Bash
 Name                IP
 ------------------  -------------
@@ -1173,7 +1173,7 @@ az monitor autoscale show \
   --name autoscale-vmss-web \
   --output jsonc
 ```
-### résulta 
+### résultat 
 ```Bash
 resulta
 ```
@@ -1184,7 +1184,7 @@ resulta
   --name autoscale-vmss-api \
   --output jsonc
 ```
-### résulta 
+### résultat 
 ```Bash
 resulta
 ```
@@ -1200,7 +1200,7 @@ az vmss list-instances \
   }" \
   --output table
 ```
-### résulta 
+### résultat 
 ```Bash
 resulta
 ```
