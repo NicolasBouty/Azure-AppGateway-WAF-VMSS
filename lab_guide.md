@@ -765,6 +765,7 @@ pip-appgw  XX.XX.XX.XX  Standard
 10.0.2.4 est un backend temporaire de bootstrap.
 Il ne représente pas une instance VMSS permanente.
 Il sera remplacé par pool-web et pool-api.
+La policy commence en mode Detection, puis sera basculée en Prevention dans une étape ultérieure.
 
 ```Bash
 cat <<'EOF' > deploy-appgw-base.sh
@@ -971,7 +972,7 @@ chmod +x deploy-appgw-base.sh
 résultat
 ```
 
-## 4. Policy basculée en Prevention
+## 4. Waf Policy basculée en Prevention
 ```Bash
 az network application-gateway waf-policy policy-setting update \
   --resource-group "$RG_WORKLOAD" \
@@ -1059,7 +1060,7 @@ az network application-gateway frontend-port create \
   --name port-80 \
   --port 80
 ```
-Le port 443 a normalement déjà été créé par la commande initiale ; vérifie son nom avec :
+Le port 443 a normalement déjà été créé par la commande initiale ; vérifier le nom avec :
 ```Bash
 az network application-gateway frontend-port list \
   --resource-group "$RG_WORKLOAD" \
