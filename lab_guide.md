@@ -1,28 +1,34 @@
 
-# 🚀 Step-by-Step Deployment Guide
+# 🚀 Guide de déploiement étape par étape
 ---
 
-# Phase 1 : Network Foundation Infrastructure
-## 1. Configuration Variables Setup
+# Phase 1 : Infrastructure de base du réseau
+## 1. Configuration des variables de configuration
 
 ```Bash
 LOCATION="westeurope"
-RG_NAME="grp_tpaz104-lab"
+RG_NETWORK="grp_tpaz104-lab"
+RG_WORKLOAD="grp_tpaz104-lab2"
 VNET_NAME="vnet_tpaz104-lab"
 PIP_NAME="pip-appgw"
 ```
----
 
-## 2. Resource Group & VNet Creation
+## 2. Création des groupes de ressources et du VNet
 
- Create Resource Group
+### Créer les groupes de ressources
 ```Bash
 az group create \
-  --name $RG_NAME \
+  --name $RG_NETWORK \
   --location $LOCATION
 ```
 
- Create VNet and initial AppGW Subnet
+```Bash
+az group create \
+  --name $RG_WORKLOAD \
+  --location $LOCATION
+```
+
+### Create VNet and initial AppGW Subnet
 ```Bash
 az network vnet create \
   --resource-group $RG_NAME \
@@ -31,7 +37,6 @@ az network vnet create \
   --subnet-name subnet-appgw \
   --subnet-prefixes 10.0.1.0/24
 ```
----
 
 ## 3. Subnets Creation
 
@@ -61,7 +66,6 @@ az network vnet subnet create \
   --name subnet-mgmt \
   --address-prefixes 10.0.4.0/24
 ```
----
 
 ## 4. Network Security Groups (NSG) Creation
 
@@ -71,7 +75,6 @@ az network nsg create --resource-group $RG_NAME --name nsg-backend-a --location 
 az network nsg create --resource-group $RG_NAME --name nsg-backend-b --location $LOCATION
 az network nsg create --resource-group $RG_NAME --name nsg-mgmt --location $LOCATION
 ```
----
 
 ## 5. NSG Subnet Association
 
