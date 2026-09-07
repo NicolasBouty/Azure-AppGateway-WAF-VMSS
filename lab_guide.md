@@ -120,9 +120,9 @@ az network public-ip create \
 ```
 ---
 
-# ✅ Phase 1 — Vérification & Proofs
+# ✅ Phase 1 — Vérification
 
-## Subnet & NSG Association Check
+## Vérification de l'association sous-réseau/NSG
 ```Bash
 az network vnet subnet list \
   --resource-group $RG_NAME \
@@ -141,25 +141,11 @@ subnet-backend-b  10.0.3.0/24  /subscriptions/<SUBSCRIPTION_ID>/resourceGroups/g
 subnet-mgmt       10.0.4.0/24  /subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab/providers/Microsoft.Network/networkSecurityGroups/nsg-mgmt
 ```
 
-## Public IP Provisioning Check
-```Bash
-az network public-ip show \
-  --resource-group $RG_NAME \
-  --name $PIP_NAME \
-  --query "{Name:name, IP:ipAddress, SKU:sku.name, Allocation:publicIpAllocationMethod}" \
-  --output table
-```
-Output:
-```Bash
-Name       IP            SKU
----------  ------------  --------
-pip-appgw  20.160.25.38  Standard
-```
 ---
 ## screenshot
 resources :
 
-<img width="851" height="293" alt="Capture d&#39;écran 2026-09-03 122619" src="https://github.com/user-attachments/assets/a20d8e13-7cbe-49ea-a1f4-69ffd81f6b11" />
+<img width="973" height="216" alt="Capture d&#39;écran 2026-09-07 131350" src="https://github.com/user-attachments/assets/46f7b3dc-59c8-4e8f-a68e-dc83b577bbb8" />
 
 ---
 
