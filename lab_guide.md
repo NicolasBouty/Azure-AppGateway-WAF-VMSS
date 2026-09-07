@@ -583,6 +583,8 @@ Les deux configurations injectent un service Systemd garantissant la haute dispo
 
 ## 1. Contenu des fichiers
 
+### Commande de création
+
 ### cloud-init-web.yaml
 ```bash
 cat <<'EOF' > cloud-init-web.yaml
@@ -735,7 +737,41 @@ ls -l ~/appgw.pfx
 
 # Phase 5. Déploiement de l'Appliquation-Gateway
 
-## 1. Déploiement initial
+## 1. Prérequi, Public IP Reservation
+
+### Variables
+```Bash
+RG_WORKLOAD="grp_tpaz104-lab2"
+PIP_NAME="pip-appgw"
+LOCATION="westeurope"
+```Bash
+
+### Réservation IP
+```Bash
+az network public-ip create \
+  --resource-group $RG_WORKLOAD \
+  --name $PIP_NAME \
+  --location $LOCATION \
+  --sku Standard \
+  --allocation-method Static
+```Bash
+
+### Vérification du provisionnement d'adresses IP publiques
+```Bash
+az network public-ip show \
+  --resource-group $RG_WORKLOAD \
+  --name $PIP_NAME \
+  --query "{Name:name, IP:ipAddress, SKU:sku.name, Allocation:publicIpAllocationMethod}" \
+  --output table
+```
+Output:
+```Bash
+Name       IP           SKU
+---------  -----------  --------
+pip-appgw  XX.XX.XX.XX  Standard
+```
+
+## 2. Déploiement initial
 
 10.0.2.4 est un backend temporaire de bootstrap.
 Il ne représente pas une instance VMSS permanente.
@@ -937,7 +973,7 @@ EOF
 chmod +x deploy-appgw-base.sh
 ```
 
-## 2. lancer le script
+## 3. lancer le script
 ```Bash
 ./deploy-appgw-base.sh
 ```
@@ -946,7 +982,7 @@ chmod +x deploy-appgw-base.sh
 résultat
 ```
 
-## 3. Policy basculée en Prevention
+## 4. Policy basculée en Prevention
 ```Bash
 az network application-gateway waf-policy policy-setting update \
   --resource-group "$RG_WORKLOAD" \
@@ -954,7 +990,7 @@ az network application-gateway waf-policy policy-setting update \
   --mode Prevention
 ```
 
-## 4. Ajouter le frontend privé
+## 5. Ajouter le frontend privé
 ```Bash
 az network application-gateway frontend-ip create \
   --resource-group "$RG_WORKLOAD" \
@@ -974,7 +1010,7 @@ az network application-gateway frontend-ip list \
 résultat
 ```
 
-## 4. Créer les probes
+## 6. Créer les probes
 ```Bash
 # Probe Web
 az network application-gateway probe create \
@@ -1005,7 +1041,7 @@ az network application-gateway probe create \
   --match-status-codes 200-399
 ```
 
-## 5. Créer les HTTP settings
+## 7. Créer les HTTP settings
 ```Bash
 az network application-gateway http-settings create \
   --resource-group "$RG_WORKLOAD" \
@@ -1026,7 +1062,7 @@ az network application-gateway http-settings create \
   --probe probe-api
 ```
 
-## 6. Créer le port frontend HTTP
+## 8. Créer le port frontend HTTP
 ```Bash
 az network application-gateway frontend-port create \
   --resource-group "$RG_WORKLOAD" \
@@ -1046,7 +1082,7 @@ az network application-gateway frontend-port list \
 résultat
 ```
 
-## 7. Créer le listener privé
+## 9. Créer le listener privé
 ```Bash
 az network application-gateway http-listener create \
   --resource-group "$RG_WORKLOAD" \
@@ -1056,7 +1092,7 @@ az network application-gateway http-listener create \
   --frontend-ip private-frontend-ip
 ```
 
-## 8. Créer les URL path maps
+## 10. Créer les URL path maps
 La map publique :
 ```text
 map-public
