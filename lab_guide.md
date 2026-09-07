@@ -31,7 +31,7 @@ az group create \
 ### Create VNet and initial AppGW Subnet
 ```Bash
 az network vnet create \
-  --resource-group $RG_NAME \
+  --resource-group $RG_NETWORK \
   --name $VNET_NAME \
   --address-prefixes 10.0.0.0/16 \
   --subnet-name subnet-appgw \
@@ -43,7 +43,7 @@ az network vnet create \
  Web Subnet
 ```Bash
 az network vnet subnet create \
-  --resource-group $RG_NAME \
+  --resource-group $RG_NETWORK \
   --vnet-name $VNET_NAME \
   --name subnet-backend-a \
   --address-prefixes 10.0.2.0/24
@@ -52,7 +52,7 @@ az network vnet subnet create \
  API Subnet
 ```Bash
 az network vnet subnet create \
-  --resource-group $RG_NAME \
+  --resource-group $RG_NETWORK \
   --vnet-name $VNET_NAME \
   --name subnet-backend-b \
   --address-prefixes 10.0.3.0/24
@@ -61,7 +61,7 @@ az network vnet subnet create \
  Management Subnet
 ```Bash
 az network vnet subnet create \
-  --resource-group $RG_NAME \
+  --resource-group $RG_NETWORK \
   --vnet-name $VNET_NAME \
   --name subnet-mgmt \
   --address-prefixes 10.0.4.0/24
@@ -80,28 +80,28 @@ az network nsg create --resource-group $RG_NAME --name nsg-mgmt --location $LOCA
 
 ```Bash
 az network vnet subnet update \
-  --resource-group $RG_NAME \
+  --resource-group $RG_NETWORK \
   --vnet-name $VNET_NAME \
   --name subnet-appgw \
   --network-security-group nsg-appgw
 ```
 ```Bash
 az network vnet subnet update \
-  --resource-group $RG_NAME \
+  --resource-group $RG_NETWORK \
   --vnet-name $VNET_NAME \
   --name subnet-backend-a \
   --network-security-group nsg-backend-a
 ```
 ```Bash
 az network vnet subnet update \
-  --resource-group $RG_NAME \
+  --resource-group $RG_NETWORK \
   --vnet-name $VNET_NAME \
   --name subnet-backend-b \
   --network-security-group nsg-backend-b
 ```
 ```Bash
 az network vnet subnet update \
-  --resource-group $RG_NAME \
+  --resource-group $RG_NETWORK \
   --vnet-name $VNET_NAME \
   --name subnet-mgmt \
   --network-security-group nsg-mgmt
@@ -112,7 +112,7 @@ az network vnet subnet update \
 
 ```Bash
 az network public-ip create \
-  --resource-group $RG_NAME \
+  --resource-group $RG_NETWORK \
   --name $PIP_NAME \
   --location $LOCATION \
   --sku Standard \
@@ -125,7 +125,7 @@ az network public-ip create \
 ## Vérification de l'association sous-réseau/NSG
 ```Bash
 az network vnet subnet list \
-  --resource-group $RG_NAME \
+  --resource-group $RG_NETWORK \
   --vnet-name $VNET_NAME \
   --query "[].{Subnet:name, Prefix:addressPrefix, NSG:networkSecurityGroup.id}" \
   --output table
@@ -154,12 +154,12 @@ resources :
 ## 1. nsg-appgw
 ```Bash
 APPGW_SUBNET="10.0.1.0/24"
-RG_NAME="grp_tpaz104-lab"
+RG_NETWORK="grp_tpaz104-lab"
 ```
 ## INBOUND
 ```Bash
 az network nsg rule create \
-  --resource-group "$RG_NAME" \
+  --resource-group "$RG_NETWORK" \
   --nsg-name nsg-appgw \
   --name Allow-Internet-Inbound \
   --priority 100 \
@@ -172,7 +172,7 @@ az network nsg rule create \
   --destination-port-ranges 80 443
 
 az network nsg rule create \
-  --resource-group "$RG_NAME" \
+  --resource-group "$RG_NETWORK" \
   --nsg-name nsg-appgw \
   --name Allow-GatewayManager-Inbound \
   --priority 110 \
@@ -185,7 +185,7 @@ az network nsg rule create \
   --destination-port-range 65200-65535
 
 az network nsg rule create \
-  --resource-group "$RG_NAME" \
+  --resource-group "$RG_NETWORK" \
   --nsg-name nsg-appgw \
   --name Allow-AzureLoadBalancer-Inbound \
   --priority 120 \
@@ -198,7 +198,7 @@ az network nsg rule create \
   --destination-port-range '*'
 
 az network nsg rule create \
-  --resource-group "$RG_NAME" \
+  --resource-group "$RG_NETWORK" \
   --nsg-name nsg-appgw \
   --name Deny-All-Inbound \
   --priority 4096 \
@@ -213,7 +213,7 @@ az network nsg rule create \
 ## OUTBOUND
 ```Bash
 az network nsg rule create \
-  --resource-group "$RG_NAME" \
+  --resource-group "$RG_NETWORK" \
   --nsg-name nsg-appgw \
   --name Allow-VNet-Outbound \
   --priority 100 \
@@ -226,7 +226,7 @@ az network nsg rule create \
   --destination-port-range '*'
 
 az network nsg rule create \
-  --resource-group "$RG_NAME" \
+  --resource-group "$RG_NETWORK" \
   --nsg-name nsg-appgw \
   --name Allow-Internet-Outbound-Temp \
   --priority 110 \
@@ -239,7 +239,7 @@ az network nsg rule create \
   --destination-port-range '*'
 
 az network nsg rule create \
-  --resource-group "$RG_NAME" \
+  --resource-group "$RG_NETWORK" \
   --nsg-name nsg-appgw \
   --name Deny-All-Outbound \
   --priority 4096 \
@@ -254,7 +254,7 @@ az network nsg rule create \
 ## vérifier le résultat avec
 ```Bash
 az network nsg rule list \
-  --resource-group "$RG_NAME" \
+  --resource-group "$RG_NETWORK" \
   --nsg-name nsg-appgw \
   --query "[].{Name:name, Priority:priority, Direction:direction, Access:access, Source:sourceAddressPrefix, Dest:destinationAddressPrefix, DestPort:destinationPortRange}" \
   --output table
@@ -282,10 +282,10 @@ MGMT_SUBNET="10.0.4.0/24"
 ## INBOUND
 ```Bash
 az network nsg rule create \
-  --resource-group "$RG_NAME" \
+  --resource-group "$RG_NETWORK" \
   --nsg-name nsg-backend-a \
   --name Allow-HTTP-From-AppGW \
-  --priority 100 \
+  --priority 100 \RG_NETWORK
   --direction Inbound \
   --access Allow \
   --protocol Tcp \
@@ -295,7 +295,7 @@ az network nsg rule create \
   --destination-port-range 80
 
 az network nsg rule create \
-  --resource-group "$RG_NAME" \
+  --resource-group "$RG_NETWORK" \
   --nsg-name nsg-backend-a \
   --name Allow-SSH-From-Jumpbox \
   --priority 110 \
@@ -308,7 +308,7 @@ az network nsg rule create \
   --destination-port-range 22
 
 az network nsg rule create \
-  --resource-group "$RG_NAME" \
+  --resource-group "$RG_NETWORK" \
   --nsg-name nsg-backend-a \
   --name Deny-Test-Port-8080 \
   --priority 200 \
@@ -321,7 +321,7 @@ az network nsg rule create \
   --destination-port-range 8080
 
 az network nsg rule create \
-  --resource-group "$RG_NAME" \
+  --resource-group "$RG_NETWORK" \
   --nsg-name nsg-backend-a \
   --name Deny-All-Inbound \
   --priority 4096 \
@@ -336,7 +336,7 @@ az network nsg rule create \
 ## OUTBOUND
 ```Bash
 az network nsg rule create \
-  --resource-group "$RG_NAME" \
+  --resource-group "$RG_NETWORK" \
   --nsg-name nsg-backend-a \
   --name Deny-All-Outbound \
   --priority 4096 \
@@ -351,7 +351,7 @@ az network nsg rule create \
 ## vérifier le résultat avec
 ```Bash
 az network nsg rule list \
-  --resource-group "$RG_NAME" \
+  --resource-group "$RG_NETWORK" \
   --nsg-name nsg-backend-a \
   --query "[].{Name:name, Priority:priority, Direction:direction, Access:access, Source:sourceAddressPrefix, Dest:destinationAddressPrefix, DestPort:destinationPortRange}" \
   --output table
@@ -377,7 +377,7 @@ MGMT_SUBNET="10.0.4.0/24"
 ## INBOUND
 ```Bash
 az network nsg rule create \
-  --resource-group "$RG_NAME" \
+  --resource-group "$RG_NETWORK" \
   --nsg-name nsg-backend-b \
   --name Allow-HTTP-From-AppGW \
   --priority 100 \
@@ -390,7 +390,7 @@ az network nsg rule create \
   --destination-port-range 80
 
 az network nsg rule create \
-  --resource-group "$RG_NAME" \
+  --resource-group "$RG_NETWORK" \
   --nsg-name nsg-backend-b \
   --name Allow-SSH-From-Jumpbox \
   --priority 110 \
@@ -403,7 +403,7 @@ az network nsg rule create \
   --destination-port-range 22
 
 az network nsg rule create \
-  --resource-group "$RG_NAME" \
+  --resource-group "$RG_NETWORK" \
   --nsg-name nsg-backend-b \
   --name Deny-Test-Port-8080 \
   --priority 200 \
@@ -416,7 +416,7 @@ az network nsg rule create \
   --destination-port-range 8080
 
 az network nsg rule create \
-  --resource-group "$RG_NAME" \
+  --resource-group "$RG_NETWORK" \
   --nsg-name nsg-backend-b \
   --name Deny-All-Inbound \
   --priority 4096 \
@@ -431,7 +431,7 @@ az network nsg rule create \
 ## OUTBOUND
 ```Bash
 az network nsg rule create \
-  --resource-group "$RG_NAME" \
+  --resource-group "$RG_NETWORK" \
   --nsg-name nsg-backend-b \
   --name Deny-All-Outbound \
   --priority 4096 \
@@ -446,7 +446,7 @@ az network nsg rule create \
 ## vérifier le résultat avec
 ```Bash
 az network nsg rule list \
-  --resource-group "$RG_NAME" \
+  --resource-group "$RG_NETWORK" \
   --nsg-name nsg-backend-b \
   --query "[].{Name:name, Priority:priority, Direction:direction, Access:access, Source:sourceAddressPrefix, Dest:destinationAddressPrefix, DestPort:destinationPortRange}" \
   --output table
@@ -473,7 +473,7 @@ APPGW_PRIVATE_IP="10.0.1.10"
 ## INBOUND
 ```Bash
 az network nsg rule create \
-  --resource-group "$RG_NAME" \
+  --resource-group "$RG_NETWORK" \
   --nsg-name nsg-mgmt \
   --name Deny-All-Inbound \
   --priority 4096 \
@@ -488,7 +488,7 @@ az network nsg rule create \
 ## OUTBOUND
 ```Bash
 az network nsg rule create \
-  --resource-group "$RG_NAME" \
+  --resource-group "$RG_NETWORK" \
   --nsg-name nsg-mgmt \
   --name Allow-SSH-To-Backends \
   --priority 100 \
@@ -501,7 +501,7 @@ az network nsg rule create \
   --destination-port-range 22
 
 az network nsg rule create \
-  --resource-group "$RG_NAME" \
+  --resource-group "$RG_NETWORK" \
   --nsg-name nsg-mgmt \
   --name Allow-HTTP-To-AppGW-PrivateFrontend \
   --priority 110 \
@@ -514,7 +514,7 @@ az network nsg rule create \
   --destination-port-range 80
 
 az network nsg rule create \
-  --resource-group "$RG_NAME" \
+  --resource-group "$RG_NETWORK" \
   --nsg-name nsg-mgmt \
   --name Deny-All-Outbound \
   --priority 4096 \
@@ -529,7 +529,7 @@ az network nsg rule create \
 ## vérifier le résultat avec
 ```Bash
 az network nsg rule list \
-  --resource-group "$RG_NAME" \
+  --resource-group "$RG_NETWORK" \
   --nsg-name nsg-mgmt \
   --query "[].{Name:name, Priority:priority, Direction:direction, Access:access, Source:sourceAddressPrefix || join(',', sourceAddressPrefixes), Dest:destinationAddressPrefix || join(',', destinationAddressPrefixes), DestPort:destinationPortRange}" \
   --output table
