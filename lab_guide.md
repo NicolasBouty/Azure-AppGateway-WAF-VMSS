@@ -70,10 +70,10 @@ az network vnet subnet create \
 ## 4. Network Security Groups (NSG) Creation
 
 ```Bash
-az network nsg create --resource-group $RG_NAME --name nsg-appgw --location $LOCATION
-az network nsg create --resource-group $RG_NAME --name nsg-backend-a --location $LOCATION
-az network nsg create --resource-group $RG_NAME --name nsg-backend-b --location $LOCATION
-az network nsg create --resource-group $RG_NAME --name nsg-mgmt --location $LOCATION
+az network nsg create --resource-group $RG_NETWORK --name nsg-appgw --location $LOCATION
+az network nsg create --resource-group $RG_NETWORK --name nsg-backend-a --location $LOCATION
+az network nsg create --resource-group $RG_NETWORK --name nsg-backend-b --location $LOCATION
+az network nsg create --resource-group $RG_NETWORK --name nsg-mgmt --location $LOCATION
 ```
 
 ## 5. NSG Subnet Association
