@@ -972,15 +972,7 @@ chmod +x deploy-appgw-base.sh
 résultat
 ```
 
-## 4. Waf Policy basculée en Prevention
-```Bash
-az network application-gateway waf-policy policy-setting update \
-  --resource-group "$RG_WORKLOAD" \
-  --policy-name waf-policy-lab \
-  --mode Prevention
-```
-
-## 5. Ajouter le frontend privé
+## 3. Ajouter le frontend privé
 ```Bash
 az network application-gateway frontend-ip create \
   --resource-group "$RG_WORKLOAD" \
@@ -1000,7 +992,7 @@ az network application-gateway frontend-ip list \
 résultat
 ```
 
-## 6. Créer les probes
+## 4. Créer les probes
 ```Bash
 # Probe Web
 az network application-gateway probe create \
@@ -1031,7 +1023,7 @@ az network application-gateway probe create \
   --match-status-codes 200-399
 ```
 
-## 7. Créer les HTTP settings
+## 5. Créer les HTTP settings
 ```Bash
 az network application-gateway http-settings create \
   --resource-group "$RG_WORKLOAD" \
@@ -1052,7 +1044,7 @@ az network application-gateway http-settings create \
   --probe probe-api
 ```
 
-## 8. Créer le port frontend HTTP
+## 6. Créer le port frontend HTTP
 ```Bash
 az network application-gateway frontend-port create \
   --resource-group "$RG_WORKLOAD" \
@@ -1072,7 +1064,7 @@ az network application-gateway frontend-port list \
 résultat
 ```
 
-## 9. Créer le listener privé
+## 7. Créer le listener privé
 ```Bash
 az network application-gateway http-listener create \
   --resource-group "$RG_WORKLOAD" \
@@ -1082,7 +1074,7 @@ az network application-gateway http-listener create \
   --frontend-ip private-frontend-ip
 ```
 
-## 10. Créer les URL path maps
+## 8. Créer les URL path maps
 La map publique :
 ```text
 map-public
@@ -1097,6 +1089,13 @@ map-private
   /api/*   → pool-api + http-setting-api
 ```
 
+## 9. Waf Policy basculée en Prevention
+```Bash
+az network application-gateway waf-policy policy-setting update \
+  --resource-group "$RG_WORKLOAD" \
+  --policy-name waf-policy-lab \
+  --mode Prevention
+```
 
 
 ---
