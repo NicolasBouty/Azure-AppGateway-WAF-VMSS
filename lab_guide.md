@@ -726,7 +726,7 @@ ls -l ~/appgw.pfx
 
 # Phase 5. Déploiement de l'Appliquation-Gateway
 
-## 1. Prérequi, Public IP Reservation
+## 1.Prérequis, Réservation IP publique
 
 ### Variables
 ```Bash
