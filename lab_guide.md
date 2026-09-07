@@ -733,7 +733,7 @@ ls -l ~/appgw.pfx
 RG_WORKLOAD="grp_tpaz104-lab2"
 PIP_NAME="pip-appgw"
 LOCATION="westeurope"
-```Bash
+```
 
 ### Réservation IP
 ```Bash
@@ -743,14 +743,13 @@ az network public-ip create \
   --location $LOCATION \
   --sku Standard \
   --allocation-method Static
-```Bash
-
+```
 ### Vérification du provisionnement d'adresses IP publiques
-```Bash
+```bash
 az network public-ip show \
-  --resource-group $RG_WORKLOAD \
-  --name $PIP_NAME \
-  --query "{Name:name, IP:ipAddress, SKU:sku.name, Allocation:publicIpAllocationMethod}" \
+  --resource-group "$RG_WORKLOAD" \
+  --name "$PIP_NAME" \
+  --query "{Name:name,IP:ipAddress,SKU:sku.name,Allocation:publicIPAllocationMethod}" \
   --output table
 ```
 Output:
@@ -766,6 +765,8 @@ pip-appgw  XX.XX.XX.XX  Standard
 Il ne représente pas une instance VMSS permanente.
 Il sera remplacé par pool-web et pool-api.
 La policy commence en mode Detection, puis sera basculée en Prevention dans une étape ultérieure.
+Le lab utilise OWASP CRS 3.2 afin de reproduire un scénario pédagogique de détection SQL injection.
+En production, la version de managed ruleset recommandée par Microsoft au moment du déploiement doit être privilégiée.
 
 ```Bash
 cat <<'EOF' > deploy-appgw-base.sh
