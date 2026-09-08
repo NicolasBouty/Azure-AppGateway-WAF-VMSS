@@ -720,19 +720,19 @@ ls -l ~/appgw.pfx
 
 # Phase 5. Déploiement de l'Appliquation-Gateway
 
-Phase 5 — Base App Gateway
-  ├── Public IP
-  ├── WAF Policy Detection
-  ├── App Gateway
-  ├── pool-web + pool-api
-  └── frontend privé
+Phase 5 — Base App Gateway  
+  ├── Public IP  
+  ├── WAF Policy Detection  
+  ├── App Gateway  
+  ├── pool-web + pool-api  
+  └── frontend privé  
 
-10.0.2.4 est un backend temporaire de bootstrap.
-Il ne représente pas une instance VMSS permanente.
-Il sera remplacé par pool-web et pool-api.
-La policy commence en mode Detection, puis sera basculée en Prevention dans une étape ultérieure.
-Le lab utilise OWASP CRS 3.2 afin de reproduire un scénario pédagogique de détection SQL injection.
-En production, la version de managed ruleset recommandée par Microsoft au moment du déploiement doit être privilégiée.
+10.0.2.4 est un backend temporaire de bootstrap.  
+Il ne représente pas une instance VMSS permanente.  
+Il sera remplacé par pool-web et pool-api.  
+La policy commence en mode Detection, puis sera basculée en Prevention dans une étape ultérieure.  
+Le lab utilise OWASP CRS 3.2 afin de reproduire un scénario pédagogique de détection SQL injection.  
+En production, la version de managed ruleset recommandée par Microsoft au moment du déploiement doit être privilégiée.  
 
 ## 1. Variables
 ```Bash
