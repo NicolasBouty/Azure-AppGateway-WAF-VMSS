@@ -1094,8 +1094,8 @@ Phase 6 — VMSS
   ├── Jumpbox
   └── Autoscale  
 
+Pour être déterministe, la Phase 6 doit créer les deux VMSS avec Bicep, en attachant explicitement leurs IP configurations aux pools pool-web et pool-api  
 association dynamique des VMSS aux pools Application Gateway, puis configuration de l'Autoscale.  
-
 Le minimum Autoscale est fixé à une instance pour limiter le coût.  
 Lorsqu’un scale-in a lieu, la disponibilité du backend n’est plus redondante ; il s’agit d’un compromis pédagogique et économique.  
 
