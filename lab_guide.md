@@ -777,7 +777,7 @@ Prefix : 10.0.1.0/24
 NSG    : .../nsg-appgw
 ```
 
-## 2. Créer l’IP public de l'application gateway
+## 3. Créer l’IP public de l'application gateway
 ```Bash
 az network public-ip create \
     --resource-group "$RG_WORKLOAD" \
@@ -813,7 +813,7 @@ az network public-ip show \
   "AssociatedTo": null
 ```
 
-## 3. Créer la WAF Policy en Detection
+## 4. Créer la WAF Policy en Detection
 ```Bash
 az network application-gateway waf-policy create \
   --resource-group "$RG_WORKLOAD" \
@@ -848,7 +848,7 @@ Type     : OWASP
 Version  : 3.2
 ```
 
-## 4. Créer l’Application Gateway WAF v2
+## 5. Créer l’Application Gateway WAF v2
 La commande CLI crée un ensemble minimal d’objets :
 frontend public, port 443, certificat, listener HTTPS, HTTP setting, pool backend temporaire et routing rule initiale.
 Nous les compléterons ou remplacerons en Phase 7.
@@ -899,7 +899,7 @@ az network application-gateway show \
 }
 ```
 
-## 5. Vérifier les objets initiaux
+## 6. Vérifier les objets initiaux
 ```Bash
 az network application-gateway show \
   --resource-group "$RG_WORKLOAD" \
@@ -950,7 +950,7 @@ HTTP setting HTTP/80
 Règle initiale avec priorité 100
 ```
 
-## 6. Créer les pools backend finaux
+## 7. Créer les pools backend finaux
 ```Bash
 az network application-gateway address-pool create \
   --resource-group "$RG_WORKLOAD" \
@@ -982,7 +982,7 @@ pool-web
 pool-api
 ```
 
-## 7. Ajouter le frontend privé
+## 8. Ajouter le frontend privé
 ```Bash
 az network application-gateway frontend-ip create \
   --resource-group "$RG_WORKLOAD" \
@@ -1055,20 +1055,35 @@ az network application-gateway waf-policy show \
   }" \
   --output table
 ```
-### résultat
+### résultat (à faire)
 ```Bash
-#IP publique	Une seule : pip-appgw
-#Public IP SKU	Standard
-#Allocation	Static
-#App Gateway	appgw-lab, WAF_v2, Succeeded
-#WAF Policy	waf-policy-lab, Detection
-#Frontend public	Associé à pip-appgw
-#Frontend privé	10.0.1.10, Static
-#Pool Web	pool-web, vide
-#Pool API	pool-api, vide
-#VMSS	Pas encore créés
-#Probes / path maps	Pas encore créées
+IP publique	Une seule : pip-appgw
+Public IP SKU	Standard
+Allocation	Static
+App Gateway	appgw-lab, WAF_v2, Succeeded
+WAF Policy	waf-policy-lab, Detection
+Frontend public	Associé à pip-appgw
+Frontend privé	10.0.1.10, Static
+Pool Web	pool-web, vide
+Pool API	pool-api, vide
+VMSS	Pas encore créés
+Probes / path maps	Pas encore créées
 ```
+### Vérification de l’IP publique
+```Bash
+PIP_ASSOCIATION=$(az network public-ip show \
+  --resource-group "$RG_WORKLOAD" \
+  --name "$PIP_NAME" \
+  --query "ipConfiguration.id" \
+  --output tsv)
+
+if [ -n "$PIP_ASSOCIATION" ]; then
+  echo "Erreur : $PIP_NAME est déjà associé à : $PIP_ASSOCIATION"
+  exit 1
+fi
+```
+l’IP publique ne doit pas être associée
+
 ---
 
 # Phase 6. Déploiement des VMSS
@@ -1079,7 +1094,17 @@ Phase 6 — VMSS
   ├── Jumpbox
   └── Autoscale  
 
-association dynamique des VMSS aux pools Application Gateway, puis configuration de l'Autoscale
+association dynamique des VMSS aux pools Application Gateway, puis configuration de l'Autoscale.  
+
+Le minimum Autoscale est fixé à une instance pour limiter le coût.  
+Lorsqu’un scale-in a lieu, la disponibilité du backend n’est plus redondante ; il s’agit d’un compromis pédagogique et économique.  
+
+### Prériquis
+Déternine si la version Cloud Shell permet réellement de créer un VMSS directement lié à pool-web/pool-api, sans créer de Load Balancer public.
+```Bash
+az vmss create --help | grep -i -E "app.gateway|backend.pool|load.balancer|public.ip"
+```
+
 
 ## 1. Variables
 ```Bash
