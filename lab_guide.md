@@ -1073,11 +1073,11 @@ az network application-gateway waf-policy show \
 
 # Phase 6. Déploiement des VMSS
 
-Phase 6 — VMSS
-  ├── VMSS Web associé à pool-web
-  ├── VMSS API associé à pool-api
+Phase 6 — VMSS  
+  ├── VMSS Web associé à pool-web  
+  ├── VMSS API associé à pool-api  
   ├── Jumpbox
-  └── Autoscale
+  └── Autoscale  
 
 association dynamique des VMSS aux pools Application Gateway, puis configuration de l'Autoscale
 
@@ -1394,8 +1394,8 @@ Instance    Provisioning    Power
 ```
 
 ## 10. Configurer Autoscale
-Configure une capacité minimale de 1, maximale de 2 et par défaut de 1.
-Les règles CPU sont uniqument une démonstration de configuration.
+Configure une capacité minimale de 1, maximale de 2 et par défaut de 1.  
+Les règles CPU sont uniqument une démonstration de configuration.  
 ### Autoscale Web
 ```Bash
 az monitor autoscale create \
