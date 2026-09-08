@@ -720,6 +720,13 @@ ls -l ~/appgw.pfx
 
 # Phase 5. Déploiement de l'Appliquation-Gateway
 
+Phase 5 — Base App Gateway
+  ├── Public IP
+  ├── WAF Policy Detection
+  ├── App Gateway
+  ├── pool-web + pool-api
+  └── frontend privé
+
 10.0.2.4 est un backend temporaire de bootstrap.
 Il ne représente pas une instance VMSS permanente.
 Il sera remplacé par pool-web et pool-api.
@@ -1066,6 +1073,12 @@ az network application-gateway waf-policy show \
 
 # Phase 6. Déploiement des VMSS
 
+Phase 6 — VMSS
+  ├── VMSS Web associé à pool-web
+  ├── VMSS API associé à pool-api
+  ├── Jumpbox
+  └── Autoscale
+
 association dynamique des VMSS aux pools Application Gateway, puis configuration de l'Autoscale
 
 ## 1. Variables
@@ -1177,6 +1190,336 @@ fi
 ```
 
 ## 5. Créer le VMSS Web
+```Bash
+az vmss create \
+  --resource-group "$RG_WORKLOAD" \
+  --name "$VMSS_WEB_NAME" \
+  --location "$LOCATION" \
+  --orchestration-mode Uniform \
+  --upgrade-policy-mode Manual \
+  --image "$IMAGE_UBUNTU" \
+  --vm-sku "$SKU_VMSS" \
+  --instance-count 1 \
+  --admin-username "$ADMIN_USER" \
+  --admin-password "$ADMIN_PASSWORD" \
+  --authentication-type password \
+  --subnet "$SUBNET_WEB_ID" \
+  --custom-data "$CLOUD_INIT_WEB" \
+  --app-gateway "$APPGW_NAME" \
+  --backend-pool-name "$POOL_WEB_NAME"
+```
+### Vérification
+```Bash
+az vmss show \
+  --resource-group "$RG_WORKLOAD" \
+  --name "$VMSS_WEB_NAME" \
+  --query "{
+    Name:name,
+    Orchestration:orchestrationMode,
+    UpgradeMode:upgradePolicy.mode,
+    Capacity:sku.capacity,
+    Subnet:virtualMachineProfile.networkProfile.networkInterfaceConfigurations[0].ipConfigurations[0].subnet.id,
+    AppGatewayPools:virtualMachineProfile.networkProfile.networkInterfaceConfigurations[0].ipConfigurations[0].applicationGatewayBackendAddressPools[].id,
+    LoadBalancerPools:virtualMachineProfile.networkProfile.networkInterfaceConfigurations[0].ipConfigurations[0].loadBalancerBackendAddressPools[].id,
+    NIC_NSG:virtualMachineProfile.networkProfile.networkInterfaceConfigurations[0].networkSecurityGroup.id
+  }" \
+  --output jsonc
+```
+### résultat
+```Bash
+Orchestration      : Uniform
+UpgradeMode        : Manual
+Capacity           : 1
+Subnet             : .../subnet-backend-a
+AppGatewayPools    : .../backendAddressPools/pool-web
+LoadBalancerPools  : []
+NIC_NSG            : null
+```
+
+## 6. Créer le VMSS API
+```Bash
+az vmss create \
+  --resource-group "$RG_WORKLOAD" \
+  --name "$VMSS_API_NAME" \
+  --location "$LOCATION" \
+  --orchestration-mode Uniform \
+  --upgrade-policy-mode Manual \
+  --image "$IMAGE_UBUNTU" \
+  --vm-sku "$SKU_VMSS" \
+  --instance-count 1 \
+  --admin-username "$ADMIN_USER" \
+  --admin-password "$ADMIN_PASSWORD" \
+  --authentication-type password \
+  --subnet "$SUBNET_API_ID" \
+  --custom-data "$CLOUD_INIT_API" \
+  --app-gateway "$APPGW_NAME" \
+  --backend-pool-name "$POOL_API_NAME"
+```
+### Vérification
+```Bash
+az vmss show \
+  --resource-group "$RG_WORKLOAD" \
+  --name "$VMSS_API_NAME" \
+  --query "{
+    Name:name,
+    Orchestration:orchestrationMode,
+    UpgradeMode:upgradePolicy.mode,
+    Capacity:sku.capacity,
+    Subnet:virtualMachineProfile.networkProfile.networkInterfaceConfigurations[0].ipConfigurations[0].subnet.id,
+    AppGatewayPools:virtualMachineProfile.networkProfile.networkInterfaceConfigurations[0].ipConfigurations[0].applicationGatewayBackendAddressPools[].id,
+    LoadBalancerPools:virtualMachineProfile.networkProfile.networkInterfaceConfigurations[0].ipConfigurations[0].loadBalancerBackendAddressPools[].id,
+    NIC_NSG:virtualMachineProfile.networkProfile.networkInterfaceConfigurations[0].networkSecurityGroup.id
+  }" \
+  --output jsonc
+```
+### résultat
+```Bash
+Orchestration      : Uniform
+UpgradeMode        : Manual
+Capacity           : 1
+Subnet             : .../subnet-backend-b
+AppGatewayPools    : .../backendAddressPools/pool-api
+LoadBalancerPools  : []
+NIC_NSG            : null
+```
+
+## 7. Vérifier l’absence de Load Balancer et IP publique
+```Bash
+echo "=== Load Balancers du Resource Group workload ==="
+
+az network lb list \
+  --resource-group "$RG_WORKLOAD" \
+  --query "[].{Name:name,SKU:sku.name}" \
+  --output table
+
+echo "=== IP publiques de la souscription ==="
+
+az network public-ip list \
+  --query "[].{
+    Name:name,
+    ResourceGroup:resourceGroup,
+    IP:ipAddress,
+    SKU:sku.name,
+    AttachedTo:ipConfiguration.id
+  }" \
+  --output table
+```
+### résultat
+```Bash
+Load Balancers :
+Aucune ligne
+
+Public IP :
+pip-appgw    grp_tpaz104-lab2    XX.XX.XX.XX    Standard    .../applicationGateways/appgw-lab/...
+```
+S’il existe une IP publique du type :
+vmss-webLBPublicIP
+vmss-apiLBPublicIP
+arrête-toi : le VMSS a recréé une topologie Load Balancer non voulue. Ne continue pas la Phase 7 avant de corriger ce point.
+
+## 8. Créer la Jumpbox privée
+```Bash
+az vm create \
+  --resource-group "$RG_WORKLOAD" \
+  --name "$JUMPBOX_NAME" \
+  --location "$LOCATION" \
+  --image "$IMAGE_UBUNTU" \
+  --size "$SKU_JUMPBOX" \
+  --admin-username "$ADMIN_USER" \
+  --admin-password "$ADMIN_PASSWORD" \
+  --authentication-type password \
+  --subnet "$SUBNET_MGMT_ID" \
+  --public-ip-address "" \
+  --boot-diagnostics true
+```
+### effacer la variable contenant le mot de passe
+```Bash
+unset ADMIN_PASSWORD
+```
+### Vérifier les propriétés
+```Bash
+JUMPBOX_NIC_ID=$(az vm show \
+  --resource-group "$RG_WORKLOAD" \
+  --name "$JUMPBOX_NAME" \
+  --query "networkProfile.networkInterfaces[0].id" \
+  --output tsv)
+
+az network nic show \
+  --ids "$JUMPBOX_NIC_ID" \
+  --query "{
+    NIC:name,
+    PrivateIP:ipConfigurations[0].privateIPAddress,
+    PublicIP:ipConfigurations[0].publicIPAddress.id,
+    Subnet:ipConfigurations[0].subnet.id,
+    NSG:networkSecurityGroup.id
+  }" \
+  --output jsonc
+```
+### résultat
+```Bash
+PrivateIP : 10.0.4.x
+PublicIP  : null
+Subnet    : .../subnet-mgmt
+NSG       : null
+```
+Le NSG de sécurité est appliqué au subnet subnet-mgmt; il n’est donc pas nécessaire d’avoir un NSG sur la NIC.
+
+## 9. Vérifier les instances VMSS
+```Bash
+az vmss list-instances \
+  --resource-group "$RG_WORKLOAD" \
+  --name "$VMSS_WEB_NAME" \
+  --query "[].{
+    Instance:instanceId,
+    Provisioning:provisioningState,
+    Power:powerState
+  }" \
+  --output table
+
+az vmss list-instances \
+  --resource-group "$RG_WORKLOAD" \
+  --name "$VMSS_API_NAME" \
+  --query "[].{
+    Instance:instanceId,
+    Provisioning:provisioningState,
+    Power:powerState
+  }" \
+  --output table
+```
+### résultat
+```Bash
+Instance    Provisioning    Power
+----------  --------------  ----------------
+0           Succeeded       VM running
+```
+
+## 10. Configurer Autoscale
+Configure une capacité minimale de 1, maximale de 2 et par défaut de 1.
+Les règles CPU sont uniqument une démonstration de configuration.
+### Autoscale Web
+```Bash
+az monitor autoscale create \
+  --resource-group "$RG_WORKLOAD" \
+  --resource "$VMSS_WEB_NAME" \
+  --resource-type Microsoft.Compute/virtualMachineScaleSets \
+  --name autoscale-vmss-web \
+  --min-count 1 \
+  --max-count 2 \
+  --count 1
+
+az monitor autoscale rule create \
+  --resource-group "$RG_WORKLOAD" \
+  --autoscale-name autoscale-vmss-web \
+  --condition "Percentage CPU > 70 avg 5m" \
+  --scale out 1 \
+  --cooldown 5
+
+az monitor autoscale rule create \
+  --resource-group "$RG_WORKLOAD" \
+  --autoscale-name autoscale-vmss-web \
+  --condition "Percentage CPU < 30 avg 10m" \
+  --scale in 1 \
+  --cooldown 10
+```
+### Autoscale API
+```Bash
+az monitor autoscale create \
+  --resource-group "$RG_WORKLOAD" \
+  --resource "$VMSS_API_NAME" \
+  --resource-type Microsoft.Compute/virtualMachineScaleSets \
+  --name autoscale-vmss-api \
+  --min-count 1 \
+  --max-count 2 \
+  --count 1
+
+az monitor autoscale rule create \
+  --resource-group "$RG_WORKLOAD" \
+  --autoscale-name autoscale-vmss-api \
+  --condition "Percentage CPU > 70 avg 5m" \
+  --scale out 1 \
+  --cooldown 5
+
+az monitor autoscale rule create \
+  --resource-group "$RG_WORKLOAD" \
+  --autoscale-name autoscale-vmss-api \
+  --condition "Percentage CPU < 30 avg 10m" \
+  --scale in 1 \
+  --cooldown 10
+```
+### Vérifier les propriétés
+```Bash
+az monitor autoscale show \
+  --resource-group "$RG_WORKLOAD" \
+  --name autoscale-vmss-web \
+  --query "profiles[].capacity" \
+  --output jsonc
+
+az monitor autoscale show \
+  --resource-group "$RG_WORKLOAD" \
+  --name autoscale-vmss-api \
+  --query "profiles[].capacity" \
+  --output jsonc
+```
+### résultat
+```Bash
+[
+  {
+    "minimum": "1",
+    "maximum": "2",
+    "default": "1"
+  }
+]
+```
+
+# ✅ Phase 6 — Vérification
+```Bash
+echo "=== VMSS ==="
+
+az vmss list \
+  --resource-group "$RG_WORKLOAD" \
+  --query "[].{
+    Name:name,
+    Orchestration:orchestrationMode,
+    Upgrade:upgradePolicy.mode,
+    Capacity:sku.capacity
+  }" \
+  --output table
+
+echo "=== Associations App Gateway des VMSS ==="
+
+az vmss show \
+  --resource-group "$RG_WORKLOAD" \
+  --name "$VMSS_WEB_NAME" \
+  --query "virtualMachineProfile.networkProfile.networkInterfaceConfigurations[0].ipConfigurations[0].applicationGatewayBackendAddressPools[].id" \
+  --output tsv
+
+az vmss show \
+  --resource-group "$RG_WORKLOAD" \
+  --name "$VMSS_API_NAME" \
+  --query "virtualMachineProfile.networkProfile.networkInterfaceConfigurations[0].ipConfigurations[0].applicationGatewayBackendAddressPools[].id" \
+  --output tsv
+
+echo "=== Public IPs ==="
+
+az network public-ip list \
+  --query "[].{Name:name,ResourceGroup:resourceGroup,IP:ipAddress}" \
+  --output table
+```
+### résultat
+```Bash
+vmss-web	Uniform, Manual, capacité 1, subnet backend-a
+vmss-api	Uniform, Manual, capacité 1, subnet backend-b
+vmss-web	Associé à pool-web
+vmss-api	Associé à pool-api
+Jumpbox	IP privée 10.0.4.x, aucune Public IP
+IP publique totale	Une seule : pip-appgw
+Azure Load Balancer	Aucun
+Autoscale Web/API	min 1, défaut 1, max 2
+```
+---
+
+# Phase 7. XXX
+
 
 
 
