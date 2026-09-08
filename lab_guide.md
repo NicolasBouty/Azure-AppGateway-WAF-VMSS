@@ -2,7 +2,7 @@
 # 🚀 Guide de déploiement étape par étape
 ---
 
-# Phase 1 : Infrastructure de base du réseau
+# Phase 1. : Infrastructure de base du réseau
 ## 1. Configuration des variables de configuration
 
 ```Bash
@@ -14,7 +14,6 @@ PIP_NAME="pip-appgw"
 ```
 
 ## 2. Création des groupes de ressources et du VNet
-
 ### Créer les groupes de ressources
 ```Bash
 az group create \
@@ -27,7 +26,6 @@ az group create \
   --name $RG_WORKLOAD \
   --location $LOCATION
 ```
-
 ### Create VNet and initial AppGW Subnet
 ```Bash
 az network vnet create \
@@ -39,7 +37,6 @@ az network vnet create \
 ```
 
 ## 3. Subnets Creation
-
  Web Subnet
 ```Bash
 az network vnet subnet create \
@@ -68,7 +65,6 @@ az network vnet subnet create \
 ```
 
 ## 4. Network Security Groups (NSG) Creation
-
 ```Bash
 az network nsg create --resource-group $RG_NETWORK --name nsg-appgw --location $LOCATION
 az network nsg create --resource-group $RG_NETWORK --name nsg-backend-a --location $LOCATION
@@ -77,7 +73,6 @@ az network nsg create --resource-group $RG_NETWORK --name nsg-mgmt --location $L
 ```
 
 ## 5. NSG Subnet Association
-
 ```Bash
 az network vnet subnet update \
   --resource-group $RG_NETWORK \
@@ -109,7 +104,6 @@ az network vnet subnet update \
 ---
 
 ## 6. Public IP Reservation
-
 ```Bash
 az network public-ip create \
   --resource-group $RG_NETWORK \
@@ -149,7 +143,7 @@ resources :
 
 ---
 
-# Phase 2 — Règles NSG
+# Phase 2. Règles NSG
 
 ## 1. nsg-appgw
 ```Bash
@@ -545,7 +539,7 @@ Deny-All-Outbound                    4096        Outbound     Deny      *       
 ```
 ---
 
-# Phase 3 — Fichiers cloud-init hors ligne
+# Phase 3. Fichiers cloud-init hors ligne
 ## 📄 Rôle des fichiers Cloud-Init (`cloud-init-web.yaml` & `cloud-init-api.yaml`)
 
 Ces fichiers permettent d'automatiser le **bootstrap hors ligne** (*zero-egress*) des instances lors du déploiement des **Virtual Machine Scale Sets (VMSS)**. 
@@ -707,7 +701,7 @@ ls -lh ~/appgw.pfx
 ```
 ### résultat 
 ```Bash
--rw-r--r-- 1 nicolas nicolas 2.7K Sep  4 12:59 /home/nicolas/appgw.pfx
+-rw-r--r-- 1 nicolas nicolas 2.7K moi jour heure /home/nicolas/appgw.pfx
 ```
 
 ## 3. Protéger le fichier dans Cloud Shell
@@ -726,24 +720,507 @@ ls -l ~/appgw.pfx
 
 # Phase 5. Déploiement de l'Appliquation-Gateway
 
-## 1.Prérequis, Réservation IP publique
+10.0.2.4 est un backend temporaire de bootstrap.
+Il ne représente pas une instance VMSS permanente.
+Il sera remplacé par pool-web et pool-api.
+La policy commence en mode Detection, puis sera basculée en Prevention dans une étape ultérieure.
+Le lab utilise OWASP CRS 3.2 afin de reproduire un scénario pédagogique de détection SQL injection.
+En production, la version de managed ruleset recommandée par Microsoft au moment du déploiement doit être privilégiée.
 
-### Variables
+## 1. Variables
 ```Bash
+RG_NETWORK="grp_tpaz104-lab"
 RG_WORKLOAD="grp_tpaz104-lab2"
-PIP_NAME="pip-appgw"
 LOCATION="westeurope"
+VNET_NAME="vnet_tpaz104-lab"
+APPGW_SUBNET_NAME="subnet-appgw"
+APPGW_NAME="appgw-lab"
+PIP_NAME="pip-appgw"
+WAF_POLICY_NAME="waf-policy-lab"
+PFX_FILE="$HOME/appgw.pfx"
+PLACEHOLDER_BACKEND="10.0.2.4"
 ```
 
-### Réservation IP
+## 2. Récupérer l’ID du subnet App Gateway
+```Bash
+SUBNET_APPGW_ID=$(az network vnet subnet show \
+  --resource-group "$RG_NETWORK" \
+  --vnet-name "$VNET_NAME" \
+  --name "$APPGW_SUBNET_NAME" \
+  --query id \
+  --output tsv)
+
+echo "$SUBNET_APPGW_ID"
+```
+### résultat
+```Bash
+/subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab/providers/Microsoft.Network/virtualNetworks/vnet_tpaz104-lab/subnets/subnet-appgw
+```
+### Contrôle du subnet et du NSG associé
+```Bash
+az network vnet subnet show \
+  --ids "$SUBNET_APPGW_ID" \
+  --query "{Subnet:name,Prefix:addressPrefix,NSG:networkSecurityGroup.id,Delegations:delegations}" \
+  --output jsonc
+```
+### résultat
+```Bash
+Subnet : subnet-appgw
+Prefix : 10.0.1.0/24
+NSG    : .../nsg-appgw
+```
+
+## 2. Créer l’IP public de l'application gateway
 ```Bash
 az network public-ip create \
-  --resource-group $RG_WORKLOAD \
-  --name $PIP_NAME \
-  --location $LOCATION \
-  --sku Standard \
-  --allocation-method Static
+    --resource-group "$RG_WORKLOAD" \
+    --name "$PIP_NAME" \
+    --location "$LOCATION" \
+    --sku Standard \
+    --allocation-method Static
 ```
+### Vérifier les propriétés
+```Bash
+az network public-ip show \
+  --resource-group "$RG_WORKLOAD" \
+  --name "$PIP_NAME" \
+  --query "{
+    Name:name,
+    ResourceGroup:resourceGroup,
+    Location:location,
+    IP:ipAddress,
+    SKU:sku.name,
+    Allocation:publicIPAllocationMethod,
+    AssociatedTo:ipConfiguration.id
+  }" \
+  --output jsonc
+```
+### résultat
+```Bash
+ "Name": "pip-appgw",
+  "ResourceGroup": "grp_tpaz104-lab2",
+  "Location": "westeurope",
+  "IP": "XX.XX.XX.XX",
+  "SKU": "Standard",
+  "Allocation": "Static",
+  "AssociatedTo": null
+```
+
+## 3. Créer la WAF Policy en Detection
+```Bash
+az network application-gateway waf-policy create \
+  --resource-group "$RG_WORKLOAD" \
+  --name "$WAF_POLICY_NAME" \
+  --location "$LOCATION" \
+  --type OWASP \
+  --version 3.2
+```
+### Vérifier les propriétés
+```Bash
+az network application-gateway waf-policy show \
+  --resource-group "$RG_WORKLOAD" \
+  --name "$WAF_POLICY_NAME" \
+  --query "{
+    Name:name,
+    Location:location,
+    Mode:policySettings.mode,
+    State:policySettings.state,
+    RuleSets:managedRules.managedRuleSets[].{
+      Type:ruleSetType,
+      Version:ruleSetVersion
+    }
+  }" \
+  --output jsonc
+```
+### résultat
+```Bash
+Name     : waf-policy-lab
+Mode     : Detection
+State    : Enabled
+Type     : OWASP
+Version  : 3.2
+```
+
+## 4. Créer l’Application Gateway WAF v2
+La commande CLI crée un ensemble minimal d’objets :
+frontend public, port 443, certificat, listener HTTPS, HTTP setting, pool backend temporaire et routing rule initiale.
+Nous les compléterons ou remplacerons en Phase 7.
+### mot de passe du PFX
+```Bash
+read -rsp "Mot de passe du certificat appgw.pfx : " PFX_PASSWORD
+echo
+```
+### créer le gateway
+```Bash
+az network application-gateway create \
+  --resource-group "$RG_WORKLOAD" \
+  --name "$APPGW_NAME" \
+  --location "$LOCATION" \
+  --sku WAF_v2 \
+  --capacity 2 \
+  --subnet "$SUBNET_APPGW_ID" \
+  --public-ip-address "$PIP_NAME" \
+  --frontend-port 443 \
+  --http-settings-port 80 \
+  --http-settings-protocol Http \
+  --cert-file "$PFX_FILE" \
+  --cert-password "$PFX_PASSWORD" \
+  --waf-policy "$WAF_POLICY_NAME" \
+  --priority 100 \
+  --servers "$PLACEHOLDER_BACKEND"
+```
+### efface immédiatement la variable
+```Bash
+unset PFX_PASSWORD
+```
+### Vérifier les propriétés
+```Bash
+az network application-gateway show \
+  --resource-group "$RG_WORKLOAD" \
+  --name "$APPGW_NAME" \
+  --query "{Name:name,State:provisioningState,SKU:sku.name,Location:location,Capacity:sku.capacity}" \
+  --output jsonc
+```
+### résultat
+```Bash
+{
+  "Name": "appgw-lab",
+  "State": "Succeeded",
+  "SKU": "WAF_v2",
+  "Location": "westeurope",
+  "Capacity": 2
+}
+```
+
+## 5. Vérifier les objets initiaux
+```Bash
+az network application-gateway show \
+  --resource-group "$RG_WORKLOAD" \
+  --name "$APPGW_NAME" \
+  --query "{
+    FrontendIPs:frontendIpConfigurations[].{
+      Name:name,
+      PublicIP:publicIPAddress.id,
+      PrivateIP:privateIPAddress
+    },
+    FrontendPorts:frontendPorts[].{
+      Name:name,
+      Port:port
+    },
+    Certificates:sslCertificates[].name,
+    Listeners:httpListeners[].{
+      Name:name,
+      Protocol:protocol,
+      FrontendIP:split(frontendIPConfiguration.id, '/')[-1],
+      FrontendPort:split(frontendPort.id, '/')[-1],
+      Certificate:split(sslCertificate.id, '/')[-1]
+    },
+    BackendPools:backendAddressPools[].{
+      Name:name,
+      Backends:backendAddresses
+    },
+    HTTPSettings:backendHttpSettingsCollection[].{
+      Name:name,
+      Port:port,
+      Protocol:protocol
+    },
+    Rules:requestRoutingRules[].{
+      Name:name,
+      Type:ruleType,
+      Priority:priority
+    }
+  }" \
+  --output jsonc
+```
+### résultat
+```Bash
+Frontend IP public
+Frontend port 443
+Certificat importé
+Listener HTTPS
+Pool backend temporaire contenant 10.0.2.4
+HTTP setting HTTP/80
+Règle initiale avec priorité 100
+```
+
+## 6. Créer les pools backend finaux
+```Bash
+az network application-gateway address-pool create \
+  --resource-group "$RG_WORKLOAD" \
+  --gateway-name "$APPGW_NAME" \
+  --name pool-web
+
+az network application-gateway address-pool create \
+  --resource-group "$RG_WORKLOAD" \
+  --gateway-name "$APPGW_NAME" \
+  --name pool-api
+```
+### Vérifier les propriétés
+```Bash
+az network application-gateway address-pool list \
+  --resource-group "$RG_WORKLOAD" \
+  --gateway-name "$APPGW_NAME" \
+  --query "[].{
+    Name:name,
+    Backends:backendAddresses
+  }" \
+  --output table
+```
+### résultat
+```Bash
+Name                     Backends
+-----------------------  ----------------
+appGatewayBackendPool    10.0.2.4
+pool-web
+pool-api
+```
+
+## 7. Ajouter le frontend privé
+```Bash
+az network application-gateway frontend-ip create \
+  --resource-group "$RG_WORKLOAD" \
+  --gateway-name "$APPGW_NAME" \
+  --name private-frontend-ip \
+  --private-ip-address 10.0.1.10 \
+  --subnet "$SUBNET_APPGW_ID"
+```
+### Vérifier les propriétés
+```Bash
+az network application-gateway frontend-ip list \
+  --resource-group "$RG_WORKLOAD" \
+  --gateway-name "$APPGW_NAME" \
+  --query "[].{
+    Name:name,
+    PublicIP:publicIPAddress.id,
+    PrivateIP:privateIPAddress,
+    PrivateAllocation:privateIPAllocationMethod,
+    Subnet:split(subnet.id, '/')[-1]
+  }" \
+  --output table
+```
+### résultat
+```Bash
+Name                    PublicIP                         PrivateIP   PrivateAllocation  Subnet
+----------------------  -------------------------------  ----------  -----------------  ------------
+appGatewayFrontendIP    .../publicIPAddresses/pip-appgw
+private-frontend-ip                                      10.0.1.10   Static             subnet-appgw
+```
+
+# ✅ Phase 5 — Vérification
+``Bash
+echo "=== Public IP du lab ==="
+az network public-ip list \
+  --query "[].{
+    Name:name,
+    ResourceGroup:resourceGroup,
+    IP:ipAddress,
+    SKU:sku.name,
+    AssociatedTo:ipConfiguration.id
+  }" \
+  --output table
+
+echo "=== Application Gateway ==="
+az network application-gateway show \
+  --resource-group "$RG_WORKLOAD" \
+  --name "$APPGW_NAME" \
+  --query "{
+    Name:name,
+    State:provisioningState,
+    SKU:sku.name,
+    WAFPolicy:firewallPolicy.id,
+    BackendPools:backendAddressPools[].name,
+    FrontendIPs:frontendIpConfigurations[].{
+      Name:name,
+      PublicIP:publicIPAddress.id,
+      PrivateIP:privateIPAddress
+    }
+  }" \
+  --output jsonc
+
+echo "=== WAF Policy ==="
+az network application-gateway waf-policy show \
+  --resource-group "$RG_WORKLOAD" \
+  --name "$WAF_POLICY_NAME" \
+  --query "{
+    Name:name,
+    Mode:policySettings.mode,
+    State:policySettings.state
+  }" \
+  --output table
+```
+### résultat
+#```Bash
+#IP publique	Une seule : pip-appgw
+#Public IP SKU	Standard
+#Allocation	Static
+#App Gateway	appgw-lab, WAF_v2, Succeeded
+#WAF Policy	waf-policy-lab, Detection
+#Frontend public	Associé à pip-appgw
+#Frontend privé	10.0.1.10, Static
+#Pool Web	pool-web, vide
+#Pool API	pool-api, vide
+#VMSS	Pas encore créés
+#Probes / path maps	Pas encore créées
+#```
+---
+
+# Phase 6. Déploiement des VMSS
+
+association dynamique des VMSS aux pools Application Gateway, puis configuration de l'Autoscale
+
+## 1. Variables
+```Bash
+RG_NETWORK="grp_tpaz104-lab"
+RG_WORKLOAD="grp_tpaz104-lab2"
+LOCATION="westeurope"
+VNET_NAME="vnet_tpaz104-lab"
+APPGW_NAME="appgw-lab"
+POOL_WEB_NAME="pool-web"
+POOL_API_NAME="pool-api"
+VMSS_WEB_NAME="vmss-web"
+VMSS_API_NAME="vmss-api"
+JUMPBOX_NAME="vm-jumpbox"
+ADMIN_USER="azureuser"
+SKU_VMSS="Standard_D2als_v7"
+SKU_JUMPBOX="Standard_D2als_v7"
+IMAGE_UBUNTU="Canonical:ubuntu-24_04-lts:server:latest"
+CLOUD_INIT_WEB="cloud-init-web.yaml"
+CLOUD_INIT_API="cloud-init-api.yaml"
+```
+
+## 2. Récupérer les IDs de subnets
+```Bash
+SUBNET_WEB_ID=$(az network vnet subnet show \
+  --resource-group "$RG_NETWORK" \
+  --vnet-name "$VNET_NAME" \
+  --name subnet-backend-a \
+  --query id \
+  --output tsv)
+
+SUBNET_API_ID=$(az network vnet subnet show \
+  --resource-group "$RG_NETWORK" \
+  --vnet-name "$VNET_NAME" \
+  --name subnet-backend-b \
+  --query id \
+  --output tsv)
+
+SUBNET_MGMT_ID=$(az network vnet subnet show \
+  --resource-group "$RG_NETWORK" \
+  --vnet-name "$VNET_NAME" \
+  --name subnet-mgmt \
+  --query id \
+  --output tsv)
+
+printf '%s\n' \
+  "$SUBNET_WEB_ID" \
+  "$SUBNET_API_ID" \
+  "$SUBNET_MGMT_ID"
+```
+### résultat
+```Bash
+.../subnets/subnet-backend-a
+.../subnets/subnet-backend-b
+.../subnets/subnet-mgmt
+```
+
+## 3. Vérifier App Gateway et pools
+```Bash
+az network application-gateway show \
+  --resource-group "$RG_WORKLOAD" \
+  --name "$APPGW_NAME" \
+  --query "{Name:name,State:provisioningState,SKU:sku.name}" \
+  --output table
+```
+
+```Bash
+az network application-gateway address-pool list \
+  --resource-group "$RG_WORKLOAD" \
+  --gateway-name "$APPGW_NAME" \
+  --query "[].{Name:name,Backends:backendAddresses}" \
+  --output table
+```
+### résultat
+```Bash
+pool-web
+pool-api
+```
+### Récupère l'IDs des pools
+```Bash
+POOL_WEB_ID=$(az network application-gateway address-pool show \
+  --resource-group "$RG_WORKLOAD" \
+  --gateway-name "$APPGW_NAME" \
+  --name "$POOL_WEB_NAME" \
+  --query id \
+  --output tsv)
+
+POOL_API_ID=$(az network application-gateway address-pool show \
+  --resource-group "$RG_WORKLOAD" \
+  --gateway-name "$APPGW_NAME" \
+  --name "$POOL_API_NAME" \
+  --query id \
+  --output tsv)
+
+printf '%s\n' "$POOL_WEB_ID" "$POOL_API_ID"
+```
+
+## 4. Saisir le mot de passe
+```Bash
+read -rsp "Mot de passe local pour Jumpbox et VMSS : " ADMIN_PASSWORD
+echo
+```
+### Vérification
+```Bash
+if [ -z "$ADMIN_PASSWORD" ]; then
+  echo "Erreur : le mot de passe ne peut pas être vide."
+  exit 1
+fi
+```
+
+## 5. Créer le VMSS Web
+
+
+
+
+### Vérifier les propriétés
+```Bash
+```
+### résultat
+```Bash
+```
+
+
+### Vérifier les propriétés
+```Bash
+```
+### résultat
+```Bash
+```
+
+### Vérifier les propriétés
+```Bash
+```
+### résultat
+```Bash
+```
+
+
+### Vérifier les propriétés
+```Bash
+```
+### résultat
+```Bash
+```
+
+
+
+
+
+
+
+
+
+
+
 ### Vérification du provisionnement d'adresses IP publiques
 ```bash
 az network public-ip show \
