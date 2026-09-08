@@ -1,5 +1,5 @@
 
-# 🚀 Guide de déploiement étape par étape
+#  Guide de déploiement étape par étape
 ---
 
 # Phase 1. : Infrastructure de base du réseau
