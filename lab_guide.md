@@ -2,7 +2,7 @@
 #  Guide de déploiement étape par étape
 ---
 
-# Phase 1. : Infrastructure de base du réseau
+# Phase 1. Infrastructure de base du réseau
 ## 1. Configuration des variables de configuration
 
 ```Bash
