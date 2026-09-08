@@ -1014,7 +1014,7 @@ private-frontend-ip                                      10.0.1.10   Static     
 ```
 
 # ✅ Phase 5 — Vérification
-``Bash
+```Bash
 echo "=== Public IP du lab ==="
 az network public-ip list \
   --query "[].{
@@ -1056,7 +1056,7 @@ az network application-gateway waf-policy show \
   --output table
 ```
 ### résultat
-#```Bash
+```Bash
 #IP publique	Une seule : pip-appgw
 #Public IP SKU	Standard
 #Allocation	Static
@@ -1068,7 +1068,7 @@ az network application-gateway waf-policy show \
 #Pool API	pool-api, vide
 #VMSS	Pas encore créés
 #Probes / path maps	Pas encore créées
-#```
+```
 ---
 
 # Phase 6. Déploiement des VMSS
