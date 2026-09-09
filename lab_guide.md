@@ -786,32 +786,25 @@ az network public-ip show \
     IP:ipAddress,
     SKU:sku.name,
     Allocation:publicIPAllocationMethod,
-    AssociatedTo:ipConfiguration.id
+    AssociatedTo:ipConfiguration.id || 'Non associe (OK)'
   }" \
-  --output jsonc
+  --output jsonc && \
+[ -z "$(az network public-ip show --resource-group "$RG_WORKLOAD" --name "$PIP_NAME" --query "ipConfiguration.id" --output tsv)" ] \
+  && echo "✅ PIP valide et non associee." \
+  || { echo "❌ Erreur : $PIP_NAME est deja associee !" ; exit 1 ; }
 ```
 ### résultat
 ```Bash
- "Allocation": "Static",
- "AssociatedTo": null,
- "IP": "XX.XX.XX.XX",
- "Location": "westeurope",
- "Name": "pip-appgw",
- "ResourceGroup": "grp_tpaz104-lab2",
- "SKU": "Standard"
-```
-### PIP ne doit pas être associé
-```Bash
-PIP_ASSOCIATION=$(az network public-ip show \
-  --resource-group "$RG_WORKLOAD" \
-  --name "$PIP_NAME" \
-  --query "ipConfiguration.id" \
-  --output tsv)
-
-if [ -n "$PIP_ASSOCIATION" ]; then
-  echo "Erreur : $PIP_NAME est déjà associé à : $PIP_ASSOCIATION"
-  exit 1
-fi
+ {
+  "Allocation": "Static",
+  "AssociatedTo": "Non associe (OK)",
+  "IP": "XX.XX.XX.XX",
+  "Location": "westeurope",
+  "Name": "pip-appgw",
+  "ResourceGroup": "grp_tpaz104-lab2",
+  "SKU": "Standard"
+}
+✅ PIP valide et non associee.
 ```
 => PIP ne doit pas être associé
 ## 4. Créer la WAF Policy en Detection
@@ -1008,10 +1001,10 @@ az network application-gateway frontend-ip list \
 ```
 ### résultat
 ```Bash
-Name                  PublicIP                                                                                                                                     Allocation    PrivateIP
---------------------  -------------------------------------------------------------------------------------------------------------------------------------------  ------------  -----------
-appGatewayFrontendIP  /subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/publicIPAddresses/pip-appgw  Dynamic
-private-frontend-ip   
+Name                  PublicIP                                                                                                                                     Allocation    State      PrivateIP    Subnet
+--------------------  -------------------------------------------------------------------------------------------------------------------------------------------  ------------  ---------  -----------  --------------------------------------------------------------------------------------------------------------------------------------------------------------------
+appGatewayFrontendIP  /subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/publicIPAddresses/pip-appgw  Dynamic       Succeeded
+private-frontend-ip                                                                                                                                                Static        Succeeded  10.0.1.10    /subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab/providers/Microsoft.Network/virtualNetworks/vnet_tpaz104-lab/subnets/subnet-appgw
 ```
 
 ## 9. Active le WAF en Detection
