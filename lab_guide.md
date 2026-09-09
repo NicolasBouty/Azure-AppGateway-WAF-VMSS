@@ -546,19 +546,19 @@ Ces fichiers permettent d'automatiser le **bootstrap hors ligne** (*zero-egress*
 
 Comme les sous-réseaux backend n'ont aucun accès à Internet (pas de NAT Gateway ni d'IP publique), ces scripts s'appuient uniquement sur les dépendances préinstallées dans l'image **Ubuntu Server 24.04 LTS** (comme `python3` et `systemd`) sans exécuter de commande `apt update` ou `apt install`.
 
-### 🟢 `cloud-init-web.yaml` — Backend Web
+###  `cloud-init-web.yaml` — Backend Web
 * **Création de la structure :** Génère le répertoire `/srv/az104/web` et y injecte une page `index.html` contenant la chaîne de caractères `OK-WEB`.
 * **Service Systemd (`az104-web.service`) :** Configure et active un serveur HTTP minimaliste via le module natif Python (`python3 -m http.server 80`).
 * **Comportement :** Écoute sur le port 80 et sert la page racine `/` pour répondre aux sondes de santé et aux requêtes d'Aag.
 
-### 🔵 `cloud-init-api.yaml` — Backend API
+###  `cloud-init-api.yaml` — Backend API
 * **Structure d'arborescence :** Génère les répertoires et fichiers nécessaires pour simuler une API routée par chemin (*path-based routing*) :
   * `/srv/az104/api/index.html` $\rightarrow$ Renvoie `OK-API-ROOT`
   * `/srv/az104/api/api/index.html` $\rightarrow$ Renvoie `OK-API` (réponse sur la route `/api/`)
   * `/srv/az104/api/api/health` $\rightarrow$ Renvoie `OK-API-HEALTHY` (utilisé par la sonde de santé personnalisée de l'Application Gateway)
 * **Service Systemd (`az104-api.service`) :** Démarre le serveur HTTP Python sur le port 80 ciblant le dossier `/srv/az104/api`.
 
-### ⚙️ Fonctionnement du service Systemd
+###  Fonctionnement du service Systemd
 Les deux configurations injectent un service Systemd garantissant la haute disponibilité locale de l'application :
 * **Départ automatique :** Le service démarre dès que le réseau est prêt (`After=network-online.target`).
 * **Autoréparation :** Option `Restart=always` avec un délai de 3 secondes (`RestartSec=3`) pour relancer le serveur web automatiquement en cas de crash.
@@ -649,8 +649,8 @@ nicolas [ ~ ]$ ls -l cloud-init-*.yaml
 
 # Phase 4. Créer et exporter le certificat 
 
-Le certificat appgw.pfx est généré localement pour le lab et n’est pas versionné, car il contient une clé privée. 
-Il est importé manuellement dans Azure Cloud Shell au moment du déploiement
+Le certificat appgw.pfx est généré localement pour le lab et n’est pas versionné, car il contient une clé privée.  
+Il est importé manuellement dans Azure Cloud Shell au moment du déploiement  
 
 ## 1. Créé le certificat
 ```Powershell
