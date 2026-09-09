@@ -1091,7 +1091,7 @@ l’IP publique ne doit pas être associée
 Phase 6 — VMSS  
   ├── VMSS Web associé à pool-web  
   ├── VMSS API associé à pool-api  
-  ├── Jumpbox
+  ├── Jumpbox  
   └── Autoscale  
 
 Pour être déterministe, la Phase 6 doit créer les deux VMSS avec Bicep, en attachant explicitement leurs IP configurations aux pools pool-web et pool-api  
