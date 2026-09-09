@@ -1005,6 +1005,43 @@ appGatewayFrontendIP  pip-appgw               Dynamic
 private-frontend-ip               10.0.1.10   Static
 ```
 
+## 9. Active le WAF en Detection
+```Bash
+az network application-gateway waf-policy policy-setting show \
+  --resource-group "$RG_WORKLOAD" \
+  --policy-name "$WAF_POLICY_NAME" \
+  --output jsonc
+```
+Puis active la policy tout en conservant Detection :
+```Bash
+az network application-gateway waf-policy policy-setting update \
+  --resource-group "$RG_WORKLOAD" \
+  --policy-name "$WAF_POLICY_NAME" \
+  --state Enabled \
+  --mode Detection \
+  --request-body-check true
+```
+### vérification
+```Bash
+az network application-gateway waf-policy policy-setting show \
+  --resource-group "$RG_WORKLOAD" \
+  --policy-name "$WAF_POLICY_NAME" \
+  --query "{
+    Mode:mode,
+    State:state,
+    RequestBodyCheck:requestBodyCheck
+  }" \
+  --output jsonc
+```
+### résultat
+```Bash
+{
+  "Mode": "Detection",
+  "State": "Enabled",
+  "RequestBodyCheck": true
+}
+```
+
 # ✅ Phase 5 — Vérification
 ```Bash
 echo "=== Public IP du lab ==="
@@ -1082,7 +1119,6 @@ if [ -n "$PIP_ASSOCIATION" ]; then
   exit 1
 fi
 ```
-l’IP publique ne doit pas être associée
 
 ---
 
