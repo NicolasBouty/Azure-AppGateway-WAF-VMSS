@@ -279,7 +279,7 @@ az network nsg rule create \
   --resource-group "$RG_NETWORK" \
   --nsg-name nsg-backend-a \
   --name Allow-HTTP-From-AppGW \
-  --priority 100 \RG_NETWORK
+  --priority 100 \
   --direction Inbound \
   --access Allow \
   --protocol Tcp \
@@ -727,7 +727,7 @@ Phase 5 — Base App Gateway
   ├── pool-web + pool-api  
   └── frontend privé  
 
-10.0.2.4 est un backend temporaire de bootstrap.  
+10.0.2.4 est un backend temporaire de bootstrap et doit être supprimé après création des pools VMSS.  
 Il ne représente pas une instance VMSS permanente.  
 Il sera remplacé par pool-web et pool-api.  
 La policy commence en mode Detection, puis sera basculée en Prevention dans une étape ultérieure.  
