@@ -964,9 +964,9 @@ az network application-gateway address-pool list \
 ```
 ### résultat
 ```Bash
-Name                     Backends
------------------------  ----------------
-appGatewayBackendPool    10.0.2.4
+Name
+---------------------
+appGatewayBackendPool
 pool-web
 pool-api
 ```
@@ -987,19 +987,22 @@ az network application-gateway frontend-ip list \
   --gateway-name "$APPGW_NAME" \
   --query "[].{
     Name:name,
+    Type:join('', [
+      not_null(publicIPAddress.id, ''),
+      not_null(privateIPAddress, '')
+    ]),
     PublicIP:publicIPAddress.id,
     PrivateIP:privateIPAddress,
-    PrivateAllocation:privateIPAllocationMethod,
-    Subnet:split(subnet.id, '/')[-1]
+    Allocation:privateIPAllocationMethod
   }" \
   --output table
 ```
-### résultat
+### résultat (raccourcie pour la lisibilité)
 ```Bash
-Name                    PublicIP                         PrivateIP   PrivateAllocation  Subnet
-----------------------  -------------------------------  ----------  -----------------  ------------
-appGatewayFrontendIP    .../publicIPAddresses/pip-appgw
-private-frontend-ip                                      10.0.1.10   Static             subnet-appgw
+Name                  PublicIP    PrivateIP   Allocation
+--------------------  ----------  ----------  ----------
+appGatewayFrontendIP  pip-appgw               Dynamic
+private-frontend-ip               10.0.1.10   Static
 ```
 
 # ✅ Phase 5 — Vérification
@@ -1046,17 +1049,28 @@ az network application-gateway waf-policy show \
 ```
 ### résultat (à faire)
 ```Bash
-IP publique	Une seule : pip-appgw
-Public IP SKU	Standard
-Allocation	Static
-App Gateway	appgw-lab, WAF_v2, Succeeded
-WAF Policy	waf-policy-lab, Detection
-Frontend public	Associé à pip-appgw
-Frontend privé	10.0.1.10, Static
-Pool Web	pool-web, vide
-Pool API	pool-api, vide
-VMSS	Pas encore créés
-Probes / path maps	Pas encore créées
+Settings.state
+=== Public IP du lab ===
+Name       ResourceGroup     IP              SKU       AssociatedTo
+---------  ----------------  --------------  --------  -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+pip-appgw  grp_tpaz104-lab2  20.105.198.140  Standard  /subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/frontendIPConfigurations/appGatewayFrontendIP
+=== Application Gateway ===
+{
+  "BackendPools": [
+    "appGatewayBackendPool",
+    "pool-web",
+    "pool-api"
+  ],
+  "FrontendIPs": null,
+  "Name": "appgw-lab",
+  "SKU": "WAF_v2",
+  "State": "Succeeded",
+  "WAFPolicy": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/ApplicationGatewayWebApplicationFirewallPolicies/waf-policy-lab"
+}
+=== WAF Policy ===
+Name            Mode       State
+--------------  ---------  --------
+waf-policy-lab  Detection  Disabled
 ```
 ### Vérification de l’IP publique
 ```Bash
