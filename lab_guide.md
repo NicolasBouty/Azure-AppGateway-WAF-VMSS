@@ -800,7 +800,20 @@ az network public-ip show \
  "ResourceGroup": "grp_tpaz104-lab2",
  "SKU": "Standard"
 ```
+### PIP ne doit pas être associé
+```Bash
+PIP_ASSOCIATION=$(az network public-ip show \
+  --resource-group "$RG_WORKLOAD" \
+  --name "$PIP_NAME" \
+  --query "ipConfiguration.id" \
+  --output tsv)
 
+if [ -n "$PIP_ASSOCIATION" ]; then
+  echo "Erreur : $PIP_NAME est déjà associé à : $PIP_ASSOCIATION"
+  exit 1
+fi
+```
+=> PIP ne doit pas être associé
 ## 4. Créer la WAF Policy en Detection
 ```Bash
 az network application-gateway waf-policy create \
@@ -993,7 +1006,7 @@ az network application-gateway frontend-ip list \
   }" \
   --output table
 ```
-### résultat (raccourcie pour la lisibilité)
+### résultat
 ```Bash
 Name                  PublicIP                                                                                                                                     Allocation    PrivateIP
 --------------------  -------------------------------------------------------------------------------------------------------------------------------------------  ------------  -----------
@@ -1103,6 +1116,8 @@ pip-appgw  grp_tpaz104-lab2  XX.XX.XX.XX  Standard  /subscriptions/088cb8d6-6945
 Name            Mode       State
 --------------  ---------  --------
 waf-policy-lab  Detection  Enabled
+```
+
 ```Bash
 PIP_ASSOCIATION=$(az network public-ip show \
   --resource-group "$RG_WORKLOAD" \
@@ -1115,7 +1130,7 @@ if [ -n "$PIP_ASSOCIATION" ]; then
   exit 1
 fi
 ```
-
+PIP ne doit pas être associé
 ---
 
 # Phase 6. Déploiement des VMSS
