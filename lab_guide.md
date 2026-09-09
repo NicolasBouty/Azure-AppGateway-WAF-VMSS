@@ -987,10 +987,6 @@ az network application-gateway frontend-ip list \
   --gateway-name "$APPGW_NAME" \
   --query "[].{
     Name:name,
-    Type:join('', [
-      not_null(publicIPAddress.id, ''),
-      not_null(privateIPAddress, '')
-    ]),
     PublicIP:publicIPAddress.id,
     PrivateIP:privateIPAddress,
     Allocation:privateIPAllocationMethod
@@ -999,20 +995,20 @@ az network application-gateway frontend-ip list \
 ```
 ### résultat (raccourcie pour la lisibilité)
 ```Bash
-Name                  PublicIP    PrivateIP   Allocation
---------------------  ----------  ----------  ----------
-appGatewayFrontendIP  pip-appgw               Dynamic
-private-frontend-ip               10.0.1.10   Static
+Name                  PublicIP                                                                                                                                     Allocation    PrivateIP
+--------------------  -------------------------------------------------------------------------------------------------------------------------------------------  ------------  -----------
+appGatewayFrontendIP  /subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/publicIPAddresses/pip-appgw  Dynamic
+private-frontend-ip   
 ```
 
 ## 9. Active le WAF en Detection
 ```Bash
-az network application-gateway waf-policy policy-setting show \
+az network application-gateway waf-policy policy-setting list \
   --resource-group "$RG_WORKLOAD" \
   --policy-name "$WAF_POLICY_NAME" \
   --output jsonc
 ```
-Puis active la policy tout en conservant Detection :
+### active la policy tout en conservant Detection :
 ```Bash
 az network application-gateway waf-policy policy-setting update \
   --resource-group "$RG_WORKLOAD" \
@@ -1023,7 +1019,7 @@ az network application-gateway waf-policy policy-setting update \
 ```
 ### vérification
 ```Bash
-az network application-gateway waf-policy policy-setting show \
+az network application-gateway waf-policy policy-setting list \
   --resource-group "$RG_WORKLOAD" \
   --policy-name "$WAF_POLICY_NAME" \
   --query "{
@@ -1065,7 +1061,7 @@ az network application-gateway show \
     SKU:sku.name,
     WAFPolicy:firewallPolicy.id,
     BackendPools:backendAddressPools[].name,
-    FrontendIPs:frontendIpConfigurations[].{
+    FrontendIPs:frontendIPConfigurations[].{
       Name:name,
       PublicIP:publicIPAddress.id,
       PrivateIP:privateIPAddress
@@ -1106,7 +1102,7 @@ pip-appgw  grp_tpaz104-lab2  XX.XX.XX.XX  Standard  /subscriptions/088cb8d6-6945
 === WAF Policy ===
 Name            Mode       State
 --------------  ---------  --------
-waf-policy-lab  Detection  Disabled
+waf-policy-lab  Detection  Enabled
 ```Bash
 PIP_ASSOCIATION=$(az network public-ip show \
   --resource-group "$RG_WORKLOAD" \
