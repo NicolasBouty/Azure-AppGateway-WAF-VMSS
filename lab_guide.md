@@ -1117,20 +1117,6 @@ Name            Mode       State
 --------------  ---------  --------
 waf-policy-lab  Detection  Enabled
 ```
-
-```Bash
-PIP_ASSOCIATION=$(az network public-ip show \
-  --resource-group "$RG_WORKLOAD" \
-  --name "$PIP_NAME" \
-  --query "ipConfiguration.id" \
-  --output tsv)
-
-if [ -n "$PIP_ASSOCIATION" ]; then
-  echo "Erreur : $PIP_NAME est déjà associé à : $PIP_ASSOCIATION"
-  exit 1
-fi
-```
-PIP ne doit pas être associé
 ---
 
 # Phase 6. Déploiement des VMSS
