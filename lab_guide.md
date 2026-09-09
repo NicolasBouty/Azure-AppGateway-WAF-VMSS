@@ -772,9 +772,10 @@ az network vnet subnet show \
 ```
 ### résultat
 ```Bash
-Subnet : subnet-appgw
-Prefix : 10.0.1.0/24
-NSG    : .../nsg-appgw
+  "Delegations": [],
+  "NSG": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab/providers/Microsoft.Network/networkSecurityGroups/nsg-appgw",
+  "Prefix": "10.0.1.0/24",
+  "Subnet": "subnet-appgw"
 ```
 
 ## 3. Créer l’IP public de l'application gateway
@@ -804,13 +805,13 @@ az network public-ip show \
 ```
 ### résultat
 ```Bash
+ "Allocation": "Static",
+ "AssociatedTo": null,
+ "IP": "XX.XX.XX.XX",
+ "Location": "westeurope",
  "Name": "pip-appgw",
-  "ResourceGroup": "grp_tpaz104-lab2",
-  "Location": "westeurope",
-  "IP": "XX.XX.XX.XX",
-  "SKU": "Standard",
-  "Allocation": "Static",
-  "AssociatedTo": null
+ "ResourceGroup": "grp_tpaz104-lab2",
+ "SKU": "Standard"
 ```
 
 ## 4. Créer la WAF Policy en Detection
@@ -841,11 +842,16 @@ az network application-gateway waf-policy show \
 ```
 ### résultat
 ```Bash
-Name     : waf-policy-lab
-Mode     : Detection
-State    : Enabled
-Type     : OWASP
-Version  : 3.2
+  "Location": "westeurope",
+  "Mode": "Detection",
+  "Name": "waf-policy-lab",
+  "RuleSets": [
+    {
+      "Type": "OWASP",
+      "Version": "3.2"
+    }
+  ],
+  "State": "Disabled"
 ```
 
 ## 5. Créer l’Application Gateway WAF v2
