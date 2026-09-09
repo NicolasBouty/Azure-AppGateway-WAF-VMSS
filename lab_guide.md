@@ -1052,7 +1052,7 @@ az network application-gateway waf-policy show \
 === Public IP du lab ===
 Name       ResourceGroup     IP              SKU       AssociatedTo
 ---------  ----------------  --------------  --------  -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-pip-appgw  grp_tpaz104-lab2  20.105.198.140  Standard  /subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/frontendIPConfigurations/appGatewayFrontendIP
+pip-appgw  grp_tpaz104-lab2  XX.XX.XX.XX  Standard  /subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/frontendIPConfigurations/appGatewayFrontendIP
 === Application Gateway ===
 {
   "BackendPools": [
