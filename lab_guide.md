@@ -1047,9 +1047,8 @@ az network application-gateway waf-policy show \
   }" \
   --output table
 ```
-### résultat (à faire)
+### résultat
 ```Bash
-Settings.state
 === Public IP du lab ===
 Name       ResourceGroup     IP              SKU       AssociatedTo
 ---------  ----------------  --------------  --------  -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -1071,8 +1070,6 @@ pip-appgw  grp_tpaz104-lab2  20.105.198.140  Standard  /subscriptions/088cb8d6-6
 Name            Mode       State
 --------------  ---------  --------
 waf-policy-lab  Detection  Disabled
-```
-### Vérification de l’IP publique
 ```Bash
 PIP_ASSOCIATION=$(az network public-ip show \
   --resource-group "$RG_WORKLOAD" \
