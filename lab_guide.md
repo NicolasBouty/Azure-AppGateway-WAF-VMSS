@@ -149,12 +149,13 @@ resources :
 ```Bash
 APPGW_SUBNET="10.0.1.0/24"
 RG_NETWORK="grp_tpaz104-lab"
+NSG_APPGW="nsg-appgw"
 ```
 ## INBOUND
 ```Bash
 az network nsg rule create \
   --resource-group "$RG_NETWORK" \
-  --nsg-name nsg-appgw \
+  --nsg-name "$NSG_APPGW" \
   --name Allow-Internet-Inbound \
   --priority 100 \
   --direction Inbound \
@@ -167,7 +168,7 @@ az network nsg rule create \
 
 az network nsg rule create \
   --resource-group "$RG_NETWORK" \
-  --nsg-name nsg-appgw \
+  --nsg-name "$NSG_APPGW" \
   --name Allow-GatewayManager-Inbound \
   --priority 110 \
   --direction Inbound \
@@ -175,12 +176,12 @@ az network nsg rule create \
   --protocol Tcp \
   --source-address-prefix GatewayManager \
   --source-port-range '*' \
-  --destination-address-prefix "$APPGW_SUBNET" \
+  --destination-address-prefix '*' \
   --destination-port-range 65200-65535
 
 az network nsg rule create \
   --resource-group "$RG_NETWORK" \
-  --nsg-name nsg-appgw \
+  --nsg-name "$NSG_APPGW" \
   --name Allow-AzureLoadBalancer-Inbound \
   --priority 120 \
   --direction Inbound \
@@ -188,12 +189,12 @@ az network nsg rule create \
   --protocol '*' \
   --source-address-prefix AzureLoadBalancer \
   --source-port-range '*' \
-  --destination-address-prefix "$APPGW_SUBNET" \
+  --destination-address-prefix '*' \
   --destination-port-range '*'
 
 az network nsg rule create \
   --resource-group "$RG_NETWORK" \
-  --nsg-name nsg-appgw \
+  --nsg-name "$NSG_APPGW" \
   --name Deny-All-Inbound \
   --priority 4096 \
   --direction Inbound \
@@ -204,45 +205,33 @@ az network nsg rule create \
   --destination-address-prefix '*' \
   --destination-port-range '*'
 ```
+
 ## OUTBOUND
 ```Bash
 az network nsg rule create \
   --resource-group "$RG_NETWORK" \
-  --nsg-name nsg-appgw \
+  --nsg-name "$NSG_APPGW" \
   --name Allow-VNet-Outbound \
   --priority 100 \
   --direction Outbound \
   --access Allow \
   --protocol '*' \
-  --source-address-prefix "$APPGW_SUBNET" \
+  --source-address-prefix '*' \
   --source-port-range '*' \
   --destination-address-prefix VirtualNetwork \
   --destination-port-range '*'
 
 az network nsg rule create \
   --resource-group "$RG_NETWORK" \
-  --nsg-name nsg-appgw \
-  --name Allow-Internet-Outbound-Temp \
+  --nsg-name "$NSG_APPGW" \
+  --name Allow-Internet-Outbound \
   --priority 110 \
   --direction Outbound \
   --access Allow \
   --protocol '*' \
-  --source-address-prefix "$APPGW_SUBNET" \
-  --source-port-range '*' \
-  --destination-address-prefix Internet \
-  --destination-port-range '*'
-
-az network nsg rule create \
-  --resource-group "$RG_NETWORK" \
-  --nsg-name nsg-appgw \
-  --name Deny-All-Outbound \
-  --priority 4096 \
-  --direction Outbound \
-  --access Deny \
-  --protocol '*' \
   --source-address-prefix '*' \
   --source-port-range '*' \
-  --destination-address-prefix '*' \
+  --destination-address-prefix Internet \
   --destination-port-range '*'
 ```
 ## vérifier le résultat avec
@@ -258,13 +247,11 @@ az network nsg rule list \
 Name                             Priority    Direction    Access    Source             Dest            DestPort
 -------------------------------  ----------  -----------  --------  -----------------  --------------  -----------
 Allow-Internet-Inbound           100         Inbound      Allow     Internet           10.0.1.0/24
-Allow-GatewayManager-Inbound     110         Inbound      Allow     GatewayManager     10.0.1.0/24     65200-65535
-Allow-AzureLoadBalancer-Inbound  120         Inbound      Allow     AzureLoadBalancer  10.0.1.0/24     *
 Deny-All-Inbound                 4096        Inbound      Deny      *                  *               *
-Allow-VNet-Outbound              100         Outbound     Allow     10.0.1.0/24        VirtualNetwork  *
-Allow-Internet-Outbound-Temp     110         Outbound     Allow     10.0.1.0/24        Internet        *
-Deny-All-Outbound                4096        Outbound     Deny      *                  *               *
-```
+Allow-GatewayManager-Inbound     110         Inbound      Allow     GatewayManager     *               65200-65535
+Allow-AzureLoadBalancer-Inbound  120         Inbound      Allow     AzureLoadBalancer  *               *
+Allow-Internet-Outbound          110         Outbound     Allow     *                  Internet        *
+Allow-VNet-Outbound              100         Outbound     Allow     *                  VirtualNetwork  *
 ---
 
 ## 2. nsg-backend-a
