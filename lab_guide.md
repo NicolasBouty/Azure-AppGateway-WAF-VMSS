@@ -1581,10 +1581,466 @@ az monitor autoscale rule create \
 ---
 
 # Phase 7. Configuration de l'App Gateway
+Phase 7 — Configuration  
+  ├── probes  
+  ├── HTTP settings  
+  ├── ports  
+  ├── listeners  
+  ├── redirection HTTP → HTTPS  
+  ├── map-public / map-private  
+  └── rules  
+
+## 1. Variables et contrôle initial
+```Bash
+RG_WORKLOAD="grp_tpaz104-lab2"
+APPGW_NAME="appgw-lab"
+PIP_NAME="pip-appgw"
+POOL_WEB_NAME="pool-web"
+POOL_API_NAME="pool-api"
+PROBE_WEB_NAME="probe-web"
+PROBE_API_NAME="probe-api"
+HTTP_SETTING_WEB="http-setting-web"
+HTTP_SETTING_API="http-setting-api"
+PORT_HTTP_NAME="port-80"
+PORT_HTTPS_NAME="appGatewayFrontendPort"
+PUBLIC_FRONTEND_IP="appGatewayFrontendIP"
+PRIVATE_FRONTEND_IP="private-frontend-ip"
+PUBLIC_HTTP_LISTENER="listener-public-http"
+PUBLIC_HTTPS_LISTENER="listener-public-https"
+PRIVATE_HTTP_LISTENER="listener-private-http"
+REDIRECT_HTTP_TO_HTTPS="redirect-http-to-https"
+MAP_PUBLIC="map-public"
+MAP_PRIVATE="map-private"
+RULE_PUBLIC_PATH="rule-public-path"
+RULE_REDIRECT_HTTP="rule-redirect-http"
+RULE_PRIVATE_PATH="rule-private-path"
+```
+Les noms appGatewayFrontendPort et appGatewayFrontendIP sont généralement créés automatiquement par az network application-gateway create.  
+Vérifier les noms avant de continuer.  
+```Bash
+az network application-gateway show \
+  --resource-group "$RG_WORKLOAD" \
+  --name "$APPGW_NAME" \
+  --query "{
+    FrontendIPs:frontendIpConfigurations[].name,
+    FrontendPorts:frontendPorts[].{Name:name,Port:port},
+    Certificates:sslCertificates[].name,
+    Listeners:httpListeners[].name,
+    Rules:requestRoutingRules[].{Name:name,Priority:priority,Type:ruleType},
+    Pools:backendAddressPools[].name
+  }" \
+  --output jsonc
+```
+### résultat
+le nom du frontend IP public lié à pip-appgw  
+le nom du port frontend 443  
+le nom du certificat importé  
+le nom du listener HTTPS initial créé en Phase 5  
+le nom de la règle initiale créée en Phase 5  
+
+(Si tes noms sont différents, modifie les variables PORT_HTTPS_NAME et PUBLIC_FRONTEND_IP en conséquence.)
+
+## 2. Nettoyer les objets temporaires
+La création initiale a normalement créé :
+appGatewayBackendPool
+appGatewayBackendHttpSettings
+appGatewayHttpListener
+rule1
+### lister les objets temporaires
+```Bash
+az network application-gateway address-pool list \
+  --resource-group "$RG_WORKLOAD" \
+  --gateway-name "$APPGW_NAME" \
+  --output table
+
+az network application-gateway http-settings list \
+  --resource-group "$RG_WORKLOAD" \
+  --gateway-name "$APPGW_NAME" \
+  --output table
+
+az network application-gateway http-listener list \
+  --resource-group "$RG_WORKLOAD" \
+  --gateway-name "$APPGW_NAME" \
+  --output table
+
+az network application-gateway rule list \
+  --resource-group "$RG_WORKLOAD" \
+  --gateway-name "$APPGW_NAME" \
+  --output table
+```
+Si les noms générés sont différents, remplacer rule1, appGatewayHttpListener, appGatewayBackendHttpSettings et appGatewayBackendPool par ceux obtenus avec la commande de contrôle
+### Supprimer la règle initiale
+```Bash
+az network application-gateway rule delete \
+  --resource-group "$RG_WORKLOAD" \
+  --gateway-name "$APPGW_NAME" \
+  --name rule1
+```
+### Supprimer le listener HTTPS temporaire
+```Bash
+az network application-gateway http-listener delete \
+  --resource-group "$RG_WORKLOAD" \
+  --gateway-name "$APPGW_NAME" \
+  --name appGatewayHttpListener
+```
+### Supprimer le HTTP setting temporaire
+```Bash
+az network application-gateway http-settings delete \
+  --resource-group "$RG_WORKLOAD" \
+  --gateway-name "$APPGW_NAME" \
+  --name appGatewayBackendHttpSettings
+```
+### Supprimer le HTTP setting temporaire
+```Bash
+az network application-gateway address-pool delete \
+  --resource-group "$RG_WORKLOAD" \
+  --gateway-name "$APPGW_NAME" \
+  --name appGatewayBackendPool
+```
+
+## 3. Créer les probes de santé
+Les VMSS doivent déjà être associés à leurs pools et leurs services Python doivent être démarrés.
+### Probe Web
+```Bash
+az network application-gateway probe create \
+  --resource-group "$RG_WORKLOAD" \
+  --gateway-name "$APPGW_NAME" \
+  --name "$PROBE_WEB_NAME" \
+  --protocol Http \
+  --host 127.0.0.1 \
+  --path / \
+  --port 80 \
+  --interval 30 \
+  --timeout 30 \
+  --threshold 3 \
+  --match-status-codes 200-399
+```
+### Probe API
+```Bash
+az network application-gateway probe create \
+  --resource-group "$RG_WORKLOAD" \
+  --gateway-name "$APPGW_NAME" \
+  --name "$PROBE_API_NAME" \
+  --protocol Http \
+  --host 127.0.0.1 \
+  --path /api/health \
+  --port 80 \
+  --interval 30 \
+  --timeout 30 \
+  --threshold 3 \
+  --match-status-codes 200-399
+```
+### vérification 
+```Bash
+az network application-gateway probe list \
+  --resource-group "$RG_WORKLOAD" \
+  --gateway-name "$APPGW_NAME" \
+  --query "[].{
+    Name:name,
+    Protocol:protocol,
+    Host:host,
+    Path:path,
+    Port:port,
+    Interval:interval,
+    Timeout:timeout,
+    Threshold:unhealthyThreshold,
+    AcceptedStatus:match.statusCodes
+  }" \
+  --output table
+```
+### résultat
+```Bash
+A FAIR
+```
+
+## 4. Créer les HTTP settings
+Chaque pool a un HTTP setting distinct, avec sa probe dédiée.
+```Bash
+az network application-gateway http-settings create \
+  --resource-group "$RG_WORKLOAD" \
+  --gateway-name "$APPGW_NAME" \
+  --name "$HTTP_SETTING_WEB" \
+  --port 80 \
+  --protocol Http \
+  --timeout 30 \
+  --probe "$PROBE_WEB_NAME"
+
+az network application-gateway http-settings create \
+  --resource-group "$RG_WORKLOAD" \
+  --gateway-name "$APPGW_NAME" \
+  --name "$HTTP_SETTING_API" \
+  --port 80 \
+  --protocol Http \
+  --timeout 30 \
+  --probe "$PROBE_API_NAME"
+```
+### vérification 
+```Bash
+az network application-gateway http-settings list \
+  --resource-group "$RG_WORKLOAD" \
+  --gateway-name "$APPGW_NAME" \
+  --query "[].{
+    Name:name,
+    Port:port,
+    Protocol:protocol,
+    Probe:split(probe.id, '/')[-1]
+  }" \
+  --output table
+```
+### résultat
+```Bash
+A FAIR
+```
+
+## 5. Créer le port HTTP 80
+Le port 443 existe déjà. Crée seulement le port 80 :
+```Bash
+az network application-gateway frontend-port create \
+  --resource-group "$RG_WORKLOAD" \
+  --gateway-name "$APPGW_NAME" \
+  --name "$PORT_HTTP_NAME" \
+  --port 80
+```
+### vérification 
+```Bash
+az network application-gateway frontend-port list \
+  --resource-group "$RG_WORKLOAD" \
+  --gateway-name "$APPGW_NAME" \
+  --query "[].{Name:name,Port:port}" \
+  --output table
+```
+### résultat
+```Bash
+Name                    Port
+----------------------  ----
+appGatewayFrontendPort  443
+port-80                 80
+```
+### Si le port 443 a un autre nom, mettre à jour :
+```Bash
+PORT_HTTPS_NAME="<NOM_REEL_DU_PORT_443>"
+```
+
+## 6. Créer les listeners
+Avant de créer le listener HTTPS public, récupèrer le nom réel du certificat :
+```Bash
+az network application-gateway ssl-cert list \
+  --resource-group "$RG_WORKLOAD" \
+  --gateway-name "$APPGW_NAME" \
+  --query "[].name" \
+  --output table
+```
+Souvent nommé appgw.pfx, mais vérifiez et stockez-le
+```Bash
+SSL_CERT_NAME=$(az network application-gateway ssl-cert list \
+  --resource-group "$RG_WORKLOAD" \
+  --gateway-name "$APPGW_NAME" \
+  --query "[0].name" \
+  --output tsv)
+
+echo "$SSL_CERT_NAME"
+```
+### Listener public HTTP
+```Bash
+az network application-gateway http-listener create \
+  --resource-group "$RG_WORKLOAD" \
+  --gateway-name "$APPGW_NAME" \
+  --name "$PUBLIC_HTTP_LISTENER" \
+  --frontend-ip "$PUBLIC_FRONTEND_IP" \
+  --frontend-port "$PORT_HTTP_NAME" \
+  --protocol Http
+```
+### Listener public HTTPS
+```Bash
+az network application-gateway http-listener create \
+  --resource-group "$RG_WORKLOAD" \
+  --gateway-name "$APPGW_NAME" \
+  --name "$PUBLIC_HTTPS_LISTENER" \
+  --frontend-ip "$PUBLIC_FRONTEND_IP" \
+  --frontend-port "$PORT_HTTPS_NAME" \
+  --protocol Https \
+  --ssl-cert "$SSL_CERT_NAME"
+```
+### Listener privé HTTP
+```Bash
+az network application-gateway http-listener create \
+  --resource-group "$RG_WORKLOAD" \
+  --gateway-name "$APPGW_NAME" \
+  --name "$PRIVATE_HTTP_LISTENER" \
+  --frontend-ip "$PRIVATE_FRONTEND_IP" \
+  --frontend-port "$PORT_HTTP_NAME" \
+  --protocol Http
+```
+### vérification 
+```Bash
+az network application-gateway http-listener list \
+  --resource-group "$RG_WORKLOAD" \
+  --gateway-name "$APPGW_NAME" \
+  --query "[].{
+    Name:name,
+    Protocol:protocol,
+    FrontendIP:split(frontendIPConfiguration.id, '/')[-1],
+    FrontendPort:split(frontendPort.id, '/')[-1],
+    SSL:split(sslCertificate.id, '/')[-1]
+  }" \
+  --output table
+```
+### résultat
+```Bash
+A FAIR
+```
+
+## 7. Créer la redirection HTTP vers HTTPS
+La redirection s’applique uniquement au listener public HTTP/80.
+```Bash
+az network application-gateway redirect-config create \
+  --resource-group "$RG_WORKLOAD" \
+  --gateway-name "$APPGW_NAME" \
+  --name "$REDIRECT_HTTP_TO_HTTPS" \
+  --type Permanent \
+  --target-listener "$PUBLIC_HTTPS_LISTENER" \
+  --include-path true \
+  --include-query-string true
+```
+### vérification 
+```Bash
+az network application-gateway redirect-config show \
+  --resource-group "$RG_WORKLOAD" \
+  --gateway-name "$APPGW_NAME" \
+  --name "$REDIRECT_HTTP_TO_HTTPS" \
+  --query "{
+    Name:name,
+    Type:redirectType,
+    TargetListener:split(targetListener.id, '/')[-1],
+    IncludePath:includePath,
+    IncludeQueryString:includeQueryString
+  }" \
+  --output jsonc
+```
+### résultat
+```Bash
+Type               : Permanent
+TargetListener     : listener-public-https
+IncludePath        : true
+IncludeQueryString : true
+```
+## 8. Créer les URL path maps
+Une URL path map a :
+    un backend par défaut pour /* : Web ;
+    une path rule spécifique /api/* : API.
+### Map publique
+```Bash
+az network application-gateway url-path-map create \
+  --resource-group "$RG_WORKLOAD" \
+  --gateway-name "$APPGW_NAME" \
+  --name "$MAP_PUBLIC" \
+  --default-address-pool "$POOL_WEB_NAME" \
+  --default-http-settings "$HTTP_SETTING_WEB" \
+  --rule-name api-route \
+  --paths "/api/*" \
+  --address-pool "$POOL_API_NAME" \
+  --http-settings "$HTTP_SETTING_API"
+```
+### Map privée
+```Bash
+az network application-gateway url-path-map create \
+  --resource-group "$RG_WORKLOAD" \
+  --gateway-name "$APPGW_NAME" \
+  --name "$MAP_PRIVATE" \
+  --default-address-pool "$POOL_WEB_NAME" \
+  --default-http-settings "$HTTP_SETTING_WEB" \
+  --rule-name api-route \
+  --paths "/api/*" \
+  --address-pool "$POOL_API_NAME" \
+  --http-settings "$HTTP_SETTING_API"
+```
+### vérification 
+```Bash
+for MAP in "$MAP_PUBLIC" "$MAP_PRIVATE"; do
+  echo "=== $MAP ==="
+
+  az network application-gateway url-path-map show \
+    --resource-group "$RG_WORKLOAD" \
+    --gateway-name "$APPGW_NAME" \
+    --name "$MAP" \
+    --query "{
+      DefaultPool:split(defaultBackendAddressPool.id, '/')[-1],
+      DefaultSetting:split(defaultBackendHttpSettings.id, '/')[-1],
+      PathRules:pathRules[].{
+        Name:name,
+        Paths:paths,
+        Pool:split(backendAddressPool.id, '/')[-1],
+        Setting:split(backendHttpSettings.id, '/')[-1]
+      }
+    }" \
+    --output jsonc
+done
+```
+### résultat
+```Bash
+DefaultPool    : pool-web
+DefaultSetting : http-setting-web
+
+PathRules:
+  api-route
+    /api/*
+    pool-api
+    http-setting-api
+```
+
+## 9.  Créer les règles de routage finales
+Les trois priorités sont uniques et lisibles :  
+100 → routage HTTPS public  
+200 → redirection HTTP public  
+300 → routage HTTP privé  
+### Règle public HTTPS : PathBasedRouting
+```Bash
+az network application-gateway rule create \
+  --resource-group "$RG_WORKLOAD" \
+  --gateway-name "$APPGW_NAME" \
+  --name "$RULE_PUBLIC_PATH" \
+  --rule-type PathBasedRouting \
+  --http-listener "$PUBLIC_HTTPS_LISTENER" \
+  --url-path-map "$MAP_PUBLIC" \
+  --priority 100
+```
+### Règle public HTTP : redirection 301 vers HTTPS
+```Bash
+az network application-gateway rule create \
+  --resource-group "$RG_WORKLOAD" \
+  --gateway-name "$APPGW_NAME" \
+  --name "$RULE_REDIRECT_HTTP" \
+  --rule-type Basic \
+  --http-listener "$PUBLIC_HTTP_LISTENER" \
+  --redirect-config "$REDIRECT_HTTP_TO_HTTPS" \
+  --priority 200
+```
+### Règle privée HTTP : PathBasedRouting
+```Bash
+az network application-gateway rule create \
+  --resource-group "$RG_WORKLOAD" \
+  --gateway-name "$APPGW_NAME" \
+  --name "$RULE_PRIVATE_PATH" \
+  --rule-type PathBasedRouting \
+  --http-listener "$PRIVATE_HTTP_LISTENER" \
+  --url-path-map "$MAP_PRIVATE" \
+  --priority 300
+```
+
+# 
 
 
 
 
+## 1.
+### vérification 
+```Bash
+
+```
+### résultat
+```Bash
+
+```
 
 
 
