@@ -898,49 +898,45 @@ az network application-gateway show \
   --resource-group "$RG_WORKLOAD" \
   --name "$APPGW_NAME" \
   --query "{
-    FrontendIPs:frontendIpConfigurations[].{
-      Name:name,
-      PublicIP:publicIPAddress.id,
-      PrivateIP:privateIPAddress
-    },
-    FrontendPorts:frontendPorts[].{
-      Name:name,
-      Port:port
-    },
-    Certificates:sslCertificates[].name,
-    Listeners:httpListeners[].{
-      Name:name,
-      Protocol:protocol,
-      FrontendIP:split(frontendIPConfiguration.id, '/')[-1],
-      FrontendPort:split(frontendPort.id, '/')[-1],
-      Certificate:split(sslCertificate.id, '/')[-1]
-    },
-    BackendPools:backendAddressPools[].{
-      Name:name,
-      Backends:backendAddresses
-    },
-    HTTPSettings:backendHttpSettingsCollection[].{
-      Name:name,
-      Port:port,
-      Protocol:protocol
-    },
-    Rules:requestRoutingRules[].{
-      Name:name,
-      Type:ruleType,
-      Priority:priority
-    }
+    Name:name,
+    State:provisioningState,
+    OperationalState:operationalState,
+    SKU:sku.name,
+    Capacity:sku.capacity,
+    FrontendPort:frontendPorts[0].port,
+    ListenerProtocol:httpListeners[0].protocol,
+    Certificate:sslCertificates[0].name,
+    BackendPool:backendAddressPools[0].name,
+    BackendIPs:backendAddressPools[0].backendAddresses[].ipAddress,
+    BackendPort:backendHttpSettingsCollection[0].port,
+    BackendProtocol:backendHttpSettingsCollection[0].protocol,
+    RoutingRule:requestRoutingRules[0].name,
+    RoutingRulePriority:requestRoutingRules[0].priority,
+    WafPolicy:firewallPolicy.id
   }" \
   --output jsonc
 ```
 ### résultat
 ```Bash
-Frontend IP public
-Frontend port 443
-Certificat importé
-Listener HTTPS
-Pool backend temporaire contenant 10.0.2.4
-HTTP setting HTTP/80
-Règle initiale avec priorité 100
+{
+  "BackendIPs": [
+    "10.0.2.4"
+  ],
+  "BackendPool": "appGatewayBackendPool",
+  "BackendPort": 80,
+  "BackendProtocol": "Http",
+  "Capacity": 2,
+  "Certificate": "appgw-labSslCert",
+  "FrontendPort": 443,
+  "ListenerProtocol": "Https",
+  "Name": "appgw-lab",
+  "OperationalState": "Running",
+  "RoutingRule": "rule1",
+  "RoutingRulePriority": 100,
+  "SKU": "WAF_v2",
+  "State": "Succeeded",
+  "WafPolicy": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/ApplicationGatewayWebApplicationFirewallPolicies/waf-policy-lab"
+}
 ```
 
 ## 7. Créer les pools backend finaux
