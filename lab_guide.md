@@ -2027,7 +2027,100 @@ az network application-gateway rule create \
   --priority 300
 ```
 
-# 
+# ✅ Phase 7 — Vérification
+```Bash
+az network application-gateway rule list \
+  --resource-group "$RG_WORKLOAD" \
+  --gateway-name "$APPGW_NAME" \
+  --query "[].{
+    Name:name,
+    Priority:priority,
+    Type:ruleType,
+    Listener:split(httpListener.id, '/')[-1],
+    PathMap:split(urlPathMap.id, '/')[-1],
+    Redirect:split(redirectConfiguration.id, '/')[-1]
+  }" \
+  --output table
+```
+### résultat
+```Bash
+Name                Priority  Type              Listener               PathMap      Redirect
+------------------  --------  ----------------  ---------------------  -----------  ----------------------
+rule-public-path    100       PathBasedRouting  listener-public-https  map-public
+rule-redirect-http  200       Basic             listener-public-http               redirect-http-to-https
+rule-private-path   300       PathBasedRouting  listener-private-http  map-private
+```
+### Vérification de l’état des backends :
+```Bash
+az network application-gateway show-backend-health \
+  --resource-group "$RG_WORKLOAD" \
+  --name "$APPGW_NAME" \
+  --output jsonc
+```
+### résultat
+```Bash
+pool-web
+  → Healthy
+
+pool-api
+  → Healthy
+```
+## 11. Tests fonctionnels
+### Récupérer l’IP publique
+```Bash
+PUBLIC_IP=$(az network public-ip show \
+  --resource-group "$RG_WORKLOAD" \
+  --name "$PIP_NAME" \
+  --query ipAddress \
+  --output tsv)
+
+echo "$PUBLIC_IP"
+```
+### 11.1 Depuis un PC local en PowerShell
+```Bash
+curl.exe -k -I "http://<IP_PUBLIQUE>/"
+```
+### résultat
+```Bash
+HTTP/1.1 301 Moved Permanently
+Location: https://<IP_PUBLIQUE>/
+```
+### vérification de curl.exe
+```Bash
+curl.exe -k "https://<IP_PUBLIQUE>/"
+curl.exe -k "https://<IP_PUBLIQUE>/api/"
+curl.exe -k "https://<IP_PUBLIQUE>/api/health"
+```
+### résultat
+```Bash
+OK-WEB
+OK-API
+OK-API-HEALTHY
+```
+### 11.2 Depuis la Jumpbox
+Via Console Série Azure :
+### vérification 
+```Bash
+curl -i http://10.0.1.10/
+curl -i http://10.0.1.10/api/
+curl -i http://10.0.1.10/api/health
+```
+### résultat
+```Bash
+OK-WEB
+OK-API
+OK-API-HEALTHY
+```
+
+Avant d’activer WAF Prevention :  
+passe en Prevention que lorsque tous les tests précédents fonctionnent et que les deux pools sont Healthy.
+puis :  
+```Bash
+az network application-gateway waf-policy policy-setting update \
+  --resource-group "$RG_WORKLOAD" \
+  --policy-name waf-policy-lab \
+  --mode Prevention
+```
 
 
 
