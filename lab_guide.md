@@ -765,7 +765,7 @@ az network vnet subnet show \
   "Subnet": "subnet-appgw"
 ```
 
-## 3. Créer l’IP public de l'application gateway
+## 3. Créer l’adresse IP publique de l’Application Gateway
 ```Bash
 az network public-ip create \
     --resource-group "$RG_WORKLOAD" \
@@ -1226,6 +1226,7 @@ test -n "$CLOUD_INIT_API_B64"
 echo "Cloud-init Web encodé : ${#CLOUD_INIT_WEB_B64} caractères"
 echo "Cloud-init API encodé : ${#CLOUD_INIT_API_B64} caractères"
 ```
+<img width="399" height="51" alt="Capture d&#39;écran 2026-09-10 110329" src="https://github.com/user-attachments/assets/12e37106-3838-40f2-8a47-66a5a0a0f7a2" />
 
 ## 4. Créer le template Bicep
 Crée un fichier nommé deploy-vmss.bicep  
@@ -1406,6 +1407,15 @@ output vmssWebId string = vmssWeb.id
 output vmssApiId string = vmssApi.id
 EOF
 ```
+### Vérification
+```Bash
+ls -lh deploy-vmss.bicep
+```
+### résultat
+```Bash
+-rw-r--r-- 1 nicolas nicolas 4.2K Sep 10 09:04 deploy-vmss.bicep
+```
+<img width="649" height="27" alt="Capture d&#39;écran 2026-09-10 111529" src="https://github.com/user-attachments/assets/c453da0a-447b-4523-a720-a93affa7c30e" />
 
 ## 5. Valider le fichier Bicep
 ```Bash
@@ -1482,6 +1492,8 @@ Name       Mode     UpgradeMode  Capacity
 vmss-web   Uniform  Manual       1
 vmss-api   Uniform  Manual       1
 ```
+<img width="442" height="98" alt="Capture d&#39;écran 2026-09-10 112144" src="https://github.com/user-attachments/assets/70ac8b1e-6178-4a5c-9e38-af00bf6a927d" />
+
 ### 7.2 Vérifier l’association App Gateway :
 ```Bash
 az vmss show \
@@ -1501,6 +1513,7 @@ az vmss show \
 .../applicationGateways/appgw-lab/backendAddressPools/pool-web
 .../applicationGateways/appgw-lab/backendAddressPools/pool-api
 ```
+<img width="603" height="53" alt="Capture d&#39;écran 2026-09-10 112225" src="https://github.com/user-attachments/assets/7552cf50-91ff-4a31-8819-da7a81f12c6b" />
 ### 7.3 Vérifier l’absence de Load Balancer et de Public IP inattendue
 ```Bash.
 az network lb list \
@@ -1525,18 +1538,23 @@ pip-appgw    grp_tpaz104-lab2    XX.XX.XX.XX
 read -rsp "Mot de passe local de la Jumpbox : " JUMPBOX_PASSWORD
 echo
 
+if [ -z "$JUMPBOX_PASSWORD" ]; then
+  echo "Erreur : mot de passe vide."
+  exit 1
+fi
+
 az vm create \
   --resource-group "$RG_WORKLOAD" \
-  --name vm-jumpbox \
+  --name "$JUMPBOX_NAME" \
   --location "$LOCATION" \
-  --image "Canonical:ubuntu-24_04-lts:server:latest" \
-  --size "Standard_B1s" \
+  --image "$IMAGE_UBUNTU" \
+  --size "$SKU_JUMPBOX" \
   --admin-username "$ADMIN_USER" \
   --admin-password "$JUMPBOX_PASSWORD" \
   --authentication-type password \
   --subnet "$SUBNET_MGMT_ID" \
   --public-ip-address "" \
-  --boot-diagnostics true
+  --boot-diagnostics ""
 
 unset JUMPBOX_PASSWORD
 ```
