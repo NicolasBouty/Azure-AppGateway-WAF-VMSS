@@ -1659,7 +1659,7 @@ PORT_HTTPS_NAME="appGatewayFrontendPort"
 PUBLIC_FRONTEND_IP="appGatewayFrontendIP"
 PRIVATE_FRONTEND_IP="private-frontend-ip"
 PUBLIC_HTTP_LISTENER="listener-public-http"
-PUBLIC_HTTPS_LISTENER="listener-public-https"
+PUBLIC_HTTPS_LISTENER="appGatewayHttpListener"
 PRIVATE_HTTP_LISTENER="listener-private-http"
 REDIRECT_HTTP_TO_HTTPS="redirect-http-to-https"
 MAP_PUBLIC="map-public"
@@ -1667,6 +1667,9 @@ MAP_PRIVATE="map-private"
 RULE_PUBLIC_PATH="rule-public-path"
 RULE_REDIRECT_HTTP="rule-redirect-http"
 RULE_PRIVATE_PATH="rule-private-path"
+RULE_PUBLIC_PATH_PRIORITY=200
+RULE_REDIRECT_HTTP_PRIORITY=300
+RULE_PRIVATE_PATH_PRIORITY=400
 ```
 Les noms appGatewayFrontendPort et appGatewayFrontendIP sont généralement créés automatiquement par az network application-gateway create.  
 Vérifier les noms avant de continuer.  
@@ -1955,8 +1958,7 @@ az network application-gateway http-listener create \
   --gateway-name "$APPGW_NAME" \
   --name "$PUBLIC_HTTP_LISTENER" \
   --frontend-ip "$PUBLIC_FRONTEND_IP" \
-  --frontend-port "$PORT_HTTP_NAME" \
-  --protocol Http
+  --frontend-port "$PORT_HTTP_NAME"
 ```
 ### Listener public HTTPS
 ```Bash
@@ -1966,7 +1968,6 @@ az network application-gateway http-listener create \
   --name "$PUBLIC_HTTPS_LISTENER" \
   --frontend-ip "$PUBLIC_FRONTEND_IP" \
   --frontend-port "$PORT_HTTPS_NAME" \
-  --protocol Https \
   --ssl-cert "$SSL_CERT_NAME"
 ```
 ### Listener privé HTTP
@@ -1976,8 +1977,7 @@ az network application-gateway http-listener create \
   --gateway-name "$APPGW_NAME" \
   --name "$PRIVATE_HTTP_LISTENER" \
   --frontend-ip "$PRIVATE_FRONTEND_IP" \
-  --frontend-port "$PORT_HTTP_NAME" \
-  --protocol Http
+  --frontend-port "$PORT_HTTP_NAME"
 ```
 ### vérification 
 ```Bash
@@ -1987,15 +1987,20 @@ az network application-gateway http-listener list \
   --query "[].{
     Name:name,
     Protocol:protocol,
-    FrontendIP:split(frontendIPConfiguration.id, '/')[-1],
-    FrontendPort:split(frontendPort.id, '/')[-1],
-    SSL:split(sslCertificate.id, '/')[-1]
+    FrontendIPId:frontendIPConfiguration.id,
+    FrontendPortId:frontendPort.id,
+    SSLCertificateId:sslCertificate.id,
+    State:provisioningState
   }" \
   --output table
 ```
 ### résultat
 ```Bash
-A FAIR
+Name                    Protocol    FrontendIPId                                                                                                                                                                                 FrontendPortId                                                                                                                                                                      SSLCertificateId                                                                                                                                                                State
+----------------------  ----------  -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  ---------
+appGatewayHttpListener  Https       /subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/frontendIPConfigurations/appGatewayFrontendIP  /subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/frontendPorts/appGatewayFrontendPort  /subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/sslCertificates/appgw-labSslCert  Succeeded
+listener-public-http    Http        /subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/frontendIPConfigurations/appGatewayFrontendIP  /subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/frontendPorts/port-80                                                                                                                                                                                                 Succeeded
+listener-private-http   Http        /subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/frontendIPConfigurations/private-frontend-ip   /subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/frontendPorts/port-80                                                                                                                                                                                                 Succeeded
 ```
 
 ## 7. Créer la redirection HTTP vers HTTPS
