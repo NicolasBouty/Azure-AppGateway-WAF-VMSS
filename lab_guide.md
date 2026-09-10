@@ -1765,6 +1765,8 @@ Name    Priority    ProvisioningState    ResourceGroup     RuleType
 ------  ----------  -------------------  ----------------  ----------
 rule1   100         Succeeded            grp_tpaz104-lab2  Basic
 ```
+
+XXXXX A DEPLACER XXXXX
 ### Supprimer la règle initiale
 ```Bash
 az network application-gateway rule delete \
@@ -1846,8 +1848,12 @@ az network application-gateway probe list \
 ```
 ### résultat
 ```Bash
-A FAIR
+Name       Protocol    Host       Path         Port    Interval    Timeout    Threshold
+---------  ----------  ---------  -----------  ------  ----------  ---------  -----------
+probe-web  Http        127.0.0.1  /            80      30          30         3
+probe-api  Http        127.0.0.1  /api/health  80      30          30         3
 ```
+<img width="897" height="99" alt="Capture d&#39;écran 2026-09-10 120259" src="https://github.com/user-attachments/assets/9d8657e6-e2cd-492f-b394-6f8bcd95f793" />
 
 ## 4. Créer les HTTP settings
 Chaque pool a un HTTP setting distinct, avec sa probe dédiée.
@@ -1885,8 +1891,13 @@ az network application-gateway http-settings list \
 ```
 ### résultat
 ```Bash
-A FAIR
+Name                           Port    Protocol    Timeout    CookieAffinity    PickHostNameFromBackend    ProbeId
+-----------------------------  ------  ----------  ---------  ----------------  -------------------------  --------------------------------------------------------------------------------------------------------------------------------------------------------------
+appGatewayBackendHttpSettings  80      Http        30         Disabled          False
+http-setting-web               80      Http        30         Disabled          False                      /subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/probes/probe-web
+http-setting-api               80      Http        30         Disabled          False                      /subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/probes/probe-api
 ```
+<img width="1058" height="190" alt="Capture d&#39;écran 2026-09-10 120812" src="https://github.com/user-attachments/assets/673f7344-1d69-4caf-a156-28c0e2df2a9a" />
 
 ## 5. Créer le port HTTP 80
 Le port 443 existe déjà. Crée seulement le port 80 :
@@ -1912,6 +1923,7 @@ Name                    Port
 appGatewayFrontendPort  443
 port-80                 80
 ```
+<img width="311" height="98" alt="Capture d&#39;écran 2026-09-10 121028" src="https://github.com/user-attachments/assets/5a52f0ec-1079-4ac5-8644-02bf399fc0f9" />
 ### Si le port 443 a un autre nom, mettre à jour :
 ```Bash
 PORT_HTTPS_NAME="<NOM_REEL_DU_PORT_443>"
