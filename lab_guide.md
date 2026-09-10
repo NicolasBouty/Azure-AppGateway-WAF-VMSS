@@ -1675,7 +1675,7 @@ az network application-gateway show \
   --resource-group "$RG_WORKLOAD" \
   --name "$APPGW_NAME" \
   --query "{
-    FrontendIPs:frontendIpConfigurations[].name,
+    FrontendIPs:frontendIPConfigurations[].name,
     FrontendPorts:frontendPorts[].{Name:name,Port:port},
     Certificates:sslCertificates[].name,
     Listeners:httpListeners[].name,
@@ -1685,13 +1685,39 @@ az network application-gateway show \
   --output jsonc
 ```
 ### résultat
-le nom du frontend IP public lié à pip-appgw  
-le nom du port frontend 443  
-le nom du certificat importé  
-le nom du listener HTTPS initial créé en Phase 5  
-le nom de la règle initiale créée en Phase 5  
-
-(Si tes noms sont différents, modifie les variables PORT_HTTPS_NAME et PUBLIC_FRONTEND_IP en conséquence.)
+```Bash
+{
+  "Certificates": [
+    "appgw-labSslCert"
+  ],
+  "FrontendIPs": [
+    "appGatewayFrontendIP",
+    "private-frontend-ip"
+  ],
+  "FrontendPorts": [
+    {
+      "Name": "appGatewayFrontendPort",
+      "Port": 443
+    }
+  ],
+  "Listeners": [
+    "appGatewayHttpListener"
+  ],
+  "Pools": [
+    "appGatewayBackendPool",
+    "pool-web",
+    "pool-api"
+  ],
+  "Rules": [
+    {
+      "Name": "rule1",
+      "Priority": 100,
+      "Type": "Basic"
+    }
+  ]
+}
+```
+Si les noms sont différents, modifie les variables PORT_HTTPS_NAME et PUBLIC_FRONTEND_IP en conséquence
 
 ## 2. Nettoyer les objets temporaires
 La création initiale a normalement créé :
@@ -1722,6 +1748,23 @@ az network application-gateway rule list \
   --output table
 ```
 Si les noms générés sont différents, remplacer rule1, appGatewayHttpListener, appGatewayBackendHttpSettings et appGatewayBackendPool par ceux obtenus avec la commande de contrôle
+### résultat
+```Bash
+Name                   ProvisioningState    ResourceGroup
+---------------------  -------------------  ----------------
+appGatewayBackendPool  Succeeded            grp_tpaz104-lab2
+pool-web               Succeeded            grp_tpaz104-lab2
+pool-api               Succeeded            grp_tpaz104-lab2
+CookieBasedAffinity    DedicatedBackendConnection    Name                           PickHostNameFromBackendAddress    Port    Protocol    ProvisioningState    RequestTimeout    ResourceGroup     ValidateCertChainAndExpiry    ValidateSNI
+---------------------  ----------------------------  -----------------------------  --------------------------------  ------  ----------  -------------------  ----------------  ----------------  ----------------------------  -------------
+Disabled               False                         appGatewayBackendHttpSettings  False                             80      Http        Succeeded            30                grp_tpaz104-lab2  True                          True
+Name                    Protocol    ProvisioningState    RequireServerNameIndication    ResourceGroup
+----------------------  ----------  -------------------  -----------------------------  ----------------
+appGatewayHttpListener  Https       Succeeded            False                          grp_tpaz104-lab2
+Name    Priority    ProvisioningState    ResourceGroup     RuleType
+------  ----------  -------------------  ----------------  ----------
+rule1   100         Succeeded            grp_tpaz104-lab2  Basic
+```
 ### Supprimer la règle initiale
 ```Bash
 az network application-gateway rule delete \
@@ -1743,7 +1786,7 @@ az network application-gateway http-settings delete \
   --gateway-name "$APPGW_NAME" \
   --name appGatewayBackendHttpSettings
 ```
-### Supprimer le HTTP setting temporaire
+### Supprimer le backend pool temporaire
 ```Bash
 az network application-gateway address-pool delete \
   --resource-group "$RG_WORKLOAD" \
@@ -2118,6 +2161,9 @@ pool-web
 pool-api
   → Healthy
 ```
+---
+
+# Phase 8. Tests fonctionnels
 ## 11. Tests fonctionnels
 ### Récupérer l’IP publique
 ```Bash
