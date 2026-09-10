@@ -805,6 +805,8 @@ az network public-ip show \
   "SKU": "Standard"
 }
 PIP valide et non associee.
+<img width="391" height="208" alt="Capture d&#39;écran 2026-09-10 104954" src="https://github.com/user-attachments/assets/3a6282e2-712f-4e1d-b271-be702c3e336c" />
+
 ```
 => PIP ne doit pas être associé
 ## 4. Créer la WAF Policy en Detection
@@ -846,6 +848,7 @@ az network application-gateway waf-policy show \
   ],
   "State": "Disabled"
 ```
+<img width="279" height="281" alt="Capture d&#39;écran 2026-09-10 105201" src="https://github.com/user-attachments/assets/01335621-37f1-4cff-9b18-fd3c6cd6e3b9" />
 
 ## 5. Créer l’Application Gateway WAF v2
 La commande CLI crée un ensemble minimal d’objets :
@@ -897,6 +900,7 @@ az network application-gateway show \
   "State": "Succeeded"
 }
 ```
+<img width="281" height="168" alt="Capture d&#39;écran 2026-09-10 105259" src="https://github.com/user-attachments/assets/f3393a21-94b5-477a-92c9-1f7010de428e" />
 
 ## 6. Vérifier les objets initiaux
 ```Bash
@@ -944,6 +948,7 @@ az network application-gateway show \
   "WafPolicy": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/ApplicationGatewayWebApplicationFirewallPolicies/waf-policy-lab"
 }
 ```
+<img width="1003" height="461" alt="Capture d&#39;écran 2026-09-10 105346" src="https://github.com/user-attachments/assets/f1daf114-2836-41aa-bad2-b5a32b2ba992" />
 
 ## 7. Créer les pools backend finaux
 ```Bash
@@ -976,6 +981,7 @@ appGatewayBackendPool
 pool-web
 pool-api
 ```
+<img width="222" height="117" alt="Capture d&#39;écran 2026-09-10 105433" src="https://github.com/user-attachments/assets/2b3ff22b-49d2-4d72-b127-9898ca455ff3" />
 
 ## 8. Ajouter le frontend privé
 ```Bash
@@ -1043,6 +1049,7 @@ az network application-gateway waf-policy policy-setting list \
   "RequestBodyCheck": true
 }
 ```
+<img width="280" height="116" alt="Capture d&#39;écran 2026-09-10 105804" src="https://github.com/user-attachments/assets/b68b7278-6476-4b8e-bc62-459e66be0e09" />
 
 # ✅ Phase 5 — Vérification
 ```Bash
@@ -1204,6 +1211,7 @@ printf '%s\n' \
 .../resourceGroups/grp_tpaz104-lab2/.../backendAddressPools/pool-web
 .../resourceGroups/grp_tpaz104-lab2/.../backendAddressPools/pool-api
 ```
+<img width="1715" height="119" alt="Capture d&#39;écran 2026-09-10 110118" src="https://github.com/user-attachments/assets/a7351634-2be2-4c74-b2a7-8980cf0fd6fd" />
 
 ## 3. Encoder le cloud-init en Base64
 Dans un template ARM/Bicep, customData doit être Base64
