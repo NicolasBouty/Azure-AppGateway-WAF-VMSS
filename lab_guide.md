@@ -1634,6 +1634,7 @@ az monitor autoscale rule create \
 ---
 
 # Phase 7. Configuration de l'App Gateway
+
 Phase 7 — Configuration  
 ├── Probes de santé  
 ├── HTTP settings  
