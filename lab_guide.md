@@ -1729,10 +1729,16 @@ az network application-gateway show \
     {
       "Name": "appGatewayFrontendPort",
       "Port": 443
+    },
+    {
+      "Name": "port-80",
+      "Port": 80
     }
   ],
   "Listeners": [
-    "appGatewayHttpListener"
+    "appGatewayHttpListener",
+    "listener-public-http",
+    "listener-private-http"
   ],
   "Pools": [
     "appGatewayBackendPool",
@@ -1783,9 +1789,13 @@ pool-api               Succeeded            grp_tpaz104-lab2
 CookieBasedAffinity    DedicatedBackendConnection    Name                           PickHostNameFromBackendAddress    Port    Protocol    ProvisioningState    RequestTimeout    ResourceGroup     ValidateCertChainAndExpiry    ValidateSNI
 ---------------------  ----------------------------  -----------------------------  --------------------------------  ------  ----------  -------------------  ----------------  ----------------  ----------------------------  -------------
 Disabled               False                         appGatewayBackendHttpSettings  False                             80      Http        Succeeded            30                grp_tpaz104-lab2  True                          True
+Disabled               False                         http-setting-web               False                             80      Http        Succeeded            30                grp_tpaz104-lab2  True                          True
+Disabled               False                         http-setting-api               False                             80      Http        Succeeded            30                grp_tpaz104-lab2  True                          True
 Name                    Protocol    ProvisioningState    RequireServerNameIndication    ResourceGroup
 ----------------------  ----------  -------------------  -----------------------------  ----------------
 appGatewayHttpListener  Https       Succeeded            False                          grp_tpaz104-lab2
+listener-public-http    Http        Succeeded            False                          grp_tpaz104-lab2
+listener-private-http   Http        Succeeded            False                          grp_tpaz104-lab2
 Name    Priority    ProvisioningState    ResourceGroup     RuleType
 ------  ----------  -------------------  ----------------  ----------
 rule1   100         Succeeded            grp_tpaz104-lab2  Basic
@@ -1945,7 +1955,7 @@ Ne pas crée pas un second listener HTTPS sur le frontend public et le port 443 
 SSL_CERT_NAME=$(az network application-gateway ssl-cert list \
   --resource-group "$RG_WORKLOAD" \
   --gateway-name "$APPGW_NAME" \
-  --query ".name" \
+  --query "[0].name" \
   --output tsv)
 
 echo "$SSL_CERT_NAME"
@@ -1971,12 +1981,13 @@ az network application-gateway http-listener list \
 ```
 ### Résultat attendu
 La commande affiche les IDs ARM complets. Les relations attendues sont :
-| Listener | Protocole | Frontend | Port | Certificat |
-|---|---|---|---:|---|
-| `appGatewayHttpListener` | HTTPS | `appGatewayFrontendIP` | 443 | `appgw-labSslCert` |
-| `listener-public-http` | HTTP | `appGatewayFrontendIP` | 80 | Aucun |
-| `listener-private-http` | HTTP | `private-frontend-ip` | 80 | Aucun |
-
+```Bash
+Name                    Protocol    FrontendIPId                                                                                                                                                                                 FrontendPortId                                                                                                                                                                      SSLCertificateId                                                                                                                                                                State
+----------------------  ----------  -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  ---------
+appGatewayHttpListener  Https       /subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/frontendIPConfigurations/appGatewayFrontendIP  /subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/frontendPorts/appGatewayFrontendPort  /subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/sslCertificates/appgw-labSslCert  Succeeded
+listener-public-http    Http        /subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/frontendIPConfigurations/appGatewayFrontendIP  /subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/frontendPorts/port-80                                                                                                                                                                                                 Succeeded
+listener-private-http   Http        /subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/frontendIPConfigurations/private-frontend-ip   /subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/frontendPorts/port-80                                                                                                                                                                                                 Succeeded
+```
 ## 7. Créer la redirection HTTP vers HTTPS
 La redirection concerne seulement le listener HTTP public sur le port 80.
 ```Bash
@@ -2011,18 +2022,17 @@ az network application-gateway redirect-config show \
   "IncludePath": true,
   "IncludeQueryString": true,
   "Name": "redirect-http-to-https",
-  "State": "Succeeded",
-  "TargetListenerId": "/subscriptions/.../httpListeners/appGatewayHttpListener",
+  "State": null,
+  "TargetListenerId": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/httpListeners/appGatewayHttpListener",
   "Type": "Permanent"
 }
 ```
 
 ## 8. Créer les URL path maps
 Chaque URL path map utilise la même logique de routage :
-| Chemin demandé | Destination |
-|---|---|
-| `/*` ou tout chemin hors `/api/*` | `pool-web` avec `http-setting-web` |
-| `/api/*` | `pool-api` avec `http-setting-api` |
+| Chemin demandé                       | Destination                        |  
+| `/*` ou tout chemin hors `/api/*`    | `pool-web` avec `http-setting-web` |  
+| `/api/*`                             | `pool-api` avec `http-setting-api` |  
 ### Map publique
 ```Bash
 az network application-gateway url-path-map create \
@@ -2073,15 +2083,39 @@ for MAP in "$MAP_PUBLIC" "$MAP_PRIVATE"; do
 done
 ```
 ### Résultat
-Pour `map-public` et `map-private` :
-```text
-Default backend pool : pool-web
-Default HTTP setting : http-setting-web
-
-Path rule            : api-route
-Path                 : /api/*
-Backend pool         : pool-api
-HTTP setting         : http-setting-api
+```Bash
+=== map-public ===
+{
+  "DefaultPoolId": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendAddressPools/pool-web",
+  "DefaultSettingId": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendHttpSettingsCollection/http-setting-web",
+  "Name": "map-public",
+  "PathRules": [
+    {
+      "Name": "api-route",
+      "Paths": [
+        "/api/*"
+      ],
+      "PoolId": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendAddressPools/pool-api",
+      "SettingId": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendHttpSettingsCollection/http-setting-api"
+    }
+  ]
+}
+=== map-private ===
+{
+  "DefaultPoolId": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendAddressPools/pool-web",
+  "DefaultSettingId": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendHttpSettingsCollection/http-setting-web",
+  "Name": "map-private",
+  "PathRules": [
+    {
+      "Name": "api-route",
+      "Paths": [
+        "/api/*"
+      ],
+      "PoolId": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendAddressPools/pool-api",
+      "SettingId": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendHttpSettingsCollection/http-setting-api"
+    }
+  ]
+}
 ```
 
 ## 9. Créer les règles de routage finales
