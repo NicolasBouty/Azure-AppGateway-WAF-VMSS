@@ -1577,6 +1577,7 @@ az network nic show \
   }" \
   --output jsonc
 ```
+<img width="286" height="166" alt="Capture d&#39;écran 2026-09-10 113320" src="https://github.com/user-attachments/assets/0d093ef1-f319-4485-b413-38383919806d" />
 
 ## 9. Configurer Autoscale
 Configure une capacité minimale de 1, maximale de 2 et par défaut de 1.  
