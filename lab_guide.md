@@ -790,8 +790,8 @@ az network public-ip show \
   }" \
   --output jsonc && \
 [ -z "$(az network public-ip show --resource-group "$RG_WORKLOAD" --name "$PIP_NAME" --query "ipConfiguration.id" --output tsv)" ] \
-  && echo "✅ PIP valide et non associee." \
-  || { echo "❌ Erreur : $PIP_NAME est deja associee !" ; exit 1 ; }
+  && echo "PIP valide et non associee" \
+  || { echo "Erreur : $PIP_NAME est deja associee" ; exit 1 ; }
 ```
 ### résultat
 ```Bash
@@ -804,7 +804,7 @@ az network public-ip show \
   "ResourceGroup": "grp_tpaz104-lab2",
   "SKU": "Standard"
 }
-✅ PIP valide et non associee.
+PIP valide et non associee.
 ```
 => PIP ne doit pas être associé
 ## 4. Créer la WAF Policy en Detection
