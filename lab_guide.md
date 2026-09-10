@@ -890,11 +890,11 @@ az network application-gateway show \
 ### résultat
 ```Bash
 {
-  "Name": "appgw-lab",
-  "State": "Succeeded",
-  "SKU": "WAF_v2",
+  "Capacity": 2,
   "Location": "westeurope",
-  "Capacity": 2
+  "Name": "appgw-lab",
+  "SKU": "WAF_v2",
+  "State": "Succeeded"
 }
 ```
 
