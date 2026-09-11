@@ -1784,12 +1784,12 @@ az network application-gateway show-backend-health \
 ```
 ---
 
-# Phase 6. Déploiement des VMSS
+# Phase 6. VMSS Web/API, Jumpbox et Autoscale
 
 Phase 6 — VMSS  
   ├── VMSS Web associé à pool-web  
   ├── VMSS API associé à pool-api  
-  ├── Jumpbox  
+  ├── Jumpbox privée  
   └── Autoscale  
 
 Pour être déterministe, la Phase 6 doit créer les deux VMSS avec Bicep, en attachant explicitement leurs IP configurations aux pools pool-web et pool-api  
@@ -1797,31 +1797,37 @@ association dynamique des VMSS aux pools Application Gateway, puis configuration
 Le minimum Autoscale est fixé à une instance pour limiter le coût.  
 Lorsqu’un scale-in a lieu, la disponibilité du backend n’est plus redondante ; il s’agit d’un compromis pédagogique et économique.  
 
-### Prériquis
-Déternine si la version Cloud Shell permet réellement de créer un VMSS directement lié à pool-web/pool-api, sans créer de Load Balancer public.
-```Bash
-az vmss create --help | grep -i -E "app.gateway|backend.pool|load.balancer|public.ip"
-```
-
-
 ## 1. Variables
 ```Bash
 RG_NETWORK="grp_tpaz104-lab"
 RG_WORKLOAD="grp_tpaz104-lab2"
 LOCATION="westeurope"
+
 VNET_NAME="vnet_tpaz104-lab"
+
 APPGW_NAME="appgw-lab"
 POOL_WEB_NAME="pool-web"
 POOL_API_NAME="pool-api"
+
 VMSS_WEB_NAME="vmss-web"
 VMSS_API_NAME="vmss-api"
+
 JUMPBOX_NAME="vm-jumpbox"
 ADMIN_USER="azureuser"
+
 SKU_VMSS="Standard_D2als_v7"
 SKU_JUMPBOX="Standard_D2als_v7"
-IMAGE_UBUNTU="Canonical:ubuntu-24_04-lts:server:latest"
+
+IMAGE_PUBLISHER="Canonical"
+IMAGE_OFFER="ubuntu-24_04-lts"
+IMAGE_SKU="server"
+IMAGE_VERSION="latest"
+
 CLOUD_INIT_WEB="cloud-init-web.yaml"
 CLOUD_INIT_API="cloud-init-api.yaml"
+
+VMSS_BICEP_FILE="deploy-vmss.bicep"
+VMSS_DEPLOYMENT_NAME="deploy-vmss-web-api"
 ```
 
 ## 2. Récupérer les IDs nécessaires
@@ -1861,37 +1867,66 @@ POOL_API_ID=$(az network application-gateway address-pool show \
   --query id \
   --output tsv)
 
+for VARIABLE in \
+  SUBNET_WEB_ID \
+  SUBNET_API_ID \
+  SUBNET_MGMT_ID \
+  POOL_WEB_ID \
+  POOL_API_ID
+do
+  if [ -z "${!VARIABLE:-}" ]; then
+    echo "Erreur : variable vide : $VARIABLE"
+    exit 1
+  fi
+done
+
 printf '%s\n' \
-  "$SUBNET_WEB_ID" \
-  "$SUBNET_API_ID" \
-  "$SUBNET_MGMT_ID" \
-  "$POOL_WEB_ID" \
-  "$POOL_API_ID"
+  "SUBNET_WEB_ID=$SUBNET_WEB_ID" \
+  "SUBNET_API_ID=$SUBNET_API_ID" \
+  "SUBNET_MGMT_ID=$SUBNET_MGMT_ID" \
+  "POOL_WEB_ID=$POOL_WEB_ID" \
+  "POOL_API_ID=$POOL_API_ID"
 ```
 ### résultat
 ```Bash
-.../resourceGroups/grp_tpaz104-lab/.../subnets/subnet-backend-a
-.../resourceGroups/grp_tpaz104-lab/.../subnets/subnet-backend-b
-.../resourceGroups/grp_tpaz104-lab/.../subnets/subnet-mgmt
-.../resourceGroups/grp_tpaz104-lab2/.../backendAddressPools/pool-web
-.../resourceGroups/grp_tpaz104-lab2/.../backendAddressPools/pool-api
+SUBNET_WEB_ID=/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab/providers/Microsoft.Network/virtualNetworks/vnet_tpaz104-lab/subnets/subnet-backend-a
+SUBNET_API_ID=/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab/providers/Microsoft.Network/virtualNetworks/vnet_tpaz104-lab/subnets/subnet-backend-b
+SUBNET_MGMT_ID=/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab/providers/Microsoft.Network/virtualNetworks/vnet_tpaz104-lab/subnets/subnet-mgmt
+POOL_WEB_ID=/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendAddressPools/pool-web
+POOL_API_ID=/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendAddressPools/pool-api
 ```
 <img width="1715" height="119" alt="Capture d&#39;écran 2026-09-10 110118" src="https://github.com/user-attachments/assets/a7351634-2be2-4c74-b2a7-8980cf0fd6fd" />
 
 ## 3. Encoder le cloud-init en Base64
 Dans un template ARM/Bicep, customData doit être Base64
 ```Bash
+for FILE in "$CLOUD_INIT_WEB" "$CLOUD_INIT_API"; do
+  if [ ! -f "$FILE" ]; then
+    echo "Erreur : fichier cloud-init introuvable : $FILE"
+    exit 1
+  fi
+done
+
 CLOUD_INIT_WEB_B64=$(base64 -w 0 "$CLOUD_INIT_WEB")
 CLOUD_INIT_API_B64=$(base64 -w 0 "$CLOUD_INIT_API")
+
+for VARIABLE in CLOUD_INIT_WEB_B64 CLOUD_INIT_API_B64; do
+  if [ -z "${!VARIABLE:-}" ]; then
+    echo "Erreur : échec d'encodage : $VARIABLE"
+    exit 1
+  fi
+done
+
+printf '%s\n' \
+  "Cloud-init Web encodé : ${#CLOUD_INIT_WEB_B64} caractères" \
+  "Cloud-init API encodé : ${#CLOUD_INIT_API_B64} caractères"
 ```
-### Vérification
+### résultat
 ```Bash
-test -n "$CLOUD_INIT_WEB_B64"
-test -n "$CLOUD_INIT_API_B64"
-echo "Cloud-init Web encodé : ${#CLOUD_INIT_WEB_B64} caractères"
-echo "Cloud-init API encodé : ${#CLOUD_INIT_API_B64} caractères"
+Cloud-init Web encodé : 884 caractères
+Cloud-init API encodé : 1120 caractères
 ```
-<img width="399" height="51" alt="Capture d&#39;écran 2026-09-10 110329" src="https://github.com/user-attachments/assets/12e37106-3838-40f2-8a47-66a5a0a0f7a2" />
+<img width="398" height="50" alt="Capture d&#39;écran 2026-09-11 160524" src="https://github.com/user-attachments/assets/48034dee-a5bf-4d5d-9e14-3ea8e9dfc8f8" />
 
 ## 4. Créer le template Bicep
 Crée un fichier nommé deploy-vmss.bicep  
@@ -1904,6 +1939,12 @@ Ce template ne définit volontairement :
 cat <<'EOF' > deploy-vmss.bicep
 @description('Azure region for the two VM Scale Sets.')
 param location string
+
+@description('Name of the Web VM Scale Set.')
+param vmssWebName string
+
+@description('Name of the API VM Scale Set.')
+param vmssApiName string
 
 @description('Administrator username for VMSS instances.')
 param adminUsername string
@@ -1930,14 +1971,16 @@ param poolWebId string
 @description('Full resource ID of Application Gateway backend pool pool-api.')
 param poolApiId string
 
-@description('Base64 encoded cloud-init content for the Web VMSS.')
+@secure()
+@description('Base64-encoded cloud-init content for the Web VMSS.')
 param customDataWeb string
 
-@description('Base64 encoded cloud-init content for the API VMSS.')
+@secure()
+@description('Base64-encoded cloud-init content for the API VMSS.')
 param customDataApi string
 
 resource vmssWeb 'Microsoft.Compute/virtualMachineScaleSets@2024-07-01' = {
-  name: 'vmss-web'
+  name: vmssWebName
   location: location
   sku: {
     name: vmSku
@@ -2003,7 +2046,7 @@ resource vmssWeb 'Microsoft.Compute/virtualMachineScaleSets@2024-07-01' = {
 }
 
 resource vmssApi 'Microsoft.Compute/virtualMachineScaleSets@2024-07-01' = {
-  name: 'vmss-api'
+  name: vmssApiName
   location: location
   sku: {
     name: vmSku
@@ -2075,29 +2118,37 @@ EOF
 ### Vérification
 ```Bash
 ls -lh deploy-vmss.bicep
+wc -l "$VMSS_BICEP_FILE"
 ```
 ### résultat
 ```Bash
--rw-r--r-- 1 nicolas nicolas 4.2K Sep 10 09:04 deploy-vmss.bicep
+-rw-r--r-- 1 nicolas nicolas 4.3K Sep 11 14:06 deploy-vmss.bicep
+176 deploy-vmss.bicep
 ```
-<img width="649" height="27" alt="Capture d&#39;écran 2026-09-10 111529" src="https://github.com/user-attachments/assets/c453da0a-447b-4523-a720-a93affa7c30e" />
 
 ## 5. Valider le fichier Bicep
 ```Bash
 az bicep build \
-  --file deploy-vmss.bicep
+  --file "$VMSS_BICEP_FILE"
+
+ls -lh deploy-vmss.json
 ```
 ### résultat
 ```Bash
-deploy-vmss.json
+-rw-r--r-- 1 nicolas nicolas 6.8K Sep 11 14:07 deploy-vmss.json
 ```
-### contrôle facultatif 
-Vérifie que le template compilé ne contient aucun Load Balancer ou Public IP :
+### Contrôles de sécurité :
 ```Bash
-grep -E '"type": "(Microsoft.Network/loadBalancers|Microsoft.Network/publicIPAddresses)"' \
-  deploy-vmss.json || true
+if grep -Eqi \
+  'Microsoft\.Network/loadBalancers|Microsoft\.Network/publicIPAddresses|publicIPAddressConfiguration|loadBalancerBackendAddressPools' \
+  deploy-vmss.json
+then
+  echo "Erreur : une ressource ou une association réseau interdite a été détectée."
+  exit 1
+fi
+
+echo "OK : aucun Load Balancer ni Public IP dans le template."
 ```
-Résultat attendu : aucune ligne.
 
 ## 6. Déployer les VMSS Web et API
 Saisis le mot de passe, sans l’afficher :
@@ -2110,19 +2161,42 @@ if [ -z "$ADMIN_PASSWORD" ]; then
   exit 1
 fi
 ```
-Déploiment :
+### contrôles avant déploiment
+```Bash
+az deployment group validate \
+  --resource-group "$RG_WORKLOAD" \
+  --template-file "$VMSS_BICEP_FILE" \
+  --parameters \
+    location="$LOCATION" \
+    vmssWebName="$VMSS_WEB_NAME" \
+    vmssApiName="$VMSS_API_NAME" \
+    adminUsername="$ADMIN_USER" \
+    adminPassword="$ADMIN_PASSWORD" \
+    vmSku="$SKU_VMSS" \
+    imageReference="{\"publisher\":\"$IMAGE_PUBLISHER\",\"offer\":\"$IMAGE_OFFER\",\"sku\":\"$IMAGE_SKU\",\"version\":\"$IMAGE_VERSION\"}" \
+    subnetWebId="$SUBNET_WEB_ID" \
+    subnetApiId="$SUBNET_API_ID" \
+    poolWebId="$POOL_WEB_ID" \
+    poolApiId="$POOL_API_ID" \
+    customDataWeb="$CLOUD_INIT_WEB_B64" \
+    customDataApi="$CLOUD_INIT_API_B64"
+```
+Seulement si cette validation retourne "provisioningState : Succeeded", lancer le create.
+### Déploiment :
 Elle automatise en une seule opération la création des deux VMSS (Web et API), leur attachement aux subnets et aux pools de l'Application Gateway, ainsi que leur configuration zero-egress via Cloud-Init.
 ```Bash
 az deployment group create \
   --resource-group "$RG_WORKLOAD" \
-  --name deploy-vmss-web-api \
-  --template-file deploy-vmss.bicep \
+  --name "$VMSS_DEPLOYMENT_NAME" \
+  --template-file "$VMSS_BICEP_FILE" \
   --parameters \
     location="$LOCATION" \
+    vmssWebName="$VMSS_WEB_NAME" \
+    vmssApiName="$VMSS_API_NAME" \
     adminUsername="$ADMIN_USER" \
     adminPassword="$ADMIN_PASSWORD" \
     vmSku="$SKU_VMSS" \
-    imageReference="{\"publisher\":\"Canonical\",\"offer\":\"ubuntu-24_04-lts\",\"sku\":\"server\",\"version\":\"latest\"}" \
+    imageReference="{\"publisher\":\"$IMAGE_PUBLISHER\",\"offer\":\"$IMAGE_OFFER\",\"sku\":\"$IMAGE_SKU\",\"version\":\"$IMAGE_VERSION\"}" \
     subnetWebId="$SUBNET_WEB_ID" \
     subnetApiId="$SUBNET_API_ID" \
     poolWebId="$POOL_WEB_ID" \
@@ -2136,7 +2210,23 @@ unset ADMIN_PASSWORD
 unset CLOUD_INIT_WEB_B64
 unset CLOUD_INIT_API_B64
 ```
+### vérification backend health
+```Bash
+az network application-gateway show-backend-health \
+  --resource-group "$RG_WORKLOAD" \
+  --name "$APPGW_NAME" \
+  --output jsonc
+```
+### résultat
+```Bash
+pool-web
+  → une ou plusieurs adresses privées
+  → Health: Healthy
 
+pool-api
+  → une ou plusieurs adresses privées
+  → Health: Healthy
+```
 ## 7. Vérifier les VMSS et les pools
 ### 7.1 Vérifier les VMSS :
 ```Bash
@@ -2218,17 +2308,22 @@ az vm create \
   --admin-password "$JUMPBOX_PASSWORD" \
   --authentication-type password \
   --subnet "$SUBNET_MGMT_ID" \
-  --public-ip-address "" \
-  --boot-diagnostics ""
+  --public-ip-address ""
 
 unset JUMPBOX_PASSWORD
 ```
-### Vérifier qu’elle a uniquement une IP privée
+### activer les diagnostics de démarrage managés
+```Bash
+az vm boot-diagnostics enable \
+  --resource-group "$RG_WORKLOAD" \
+  --name "$JUMPBOX_NAME"
+```
+### Vérifier la Jumpbox privée a uniquement une IP privée
 ```Bash
 JUMPBOX_NIC_ID=$(az vm show \
   --resource-group "$RG_WORKLOAD" \
-  --name vm-jumpbox \
-  --query 'networkProfile.networkInterfaces[0].id' \
+  --name "$JUMPBOX_NAME" \
+  --query "networkProfile.networkInterfaces[0].id" \
   --output tsv)
 
 az network nic show \
@@ -2242,7 +2337,7 @@ az network nic show \
   }" \
   --output jsonc
 ```
-<img width="286" height="166" alt="Capture d&#39;écran 2026-09-10 113320" src="https://github.com/user-attachments/assets/0d093ef1-f319-4485-b413-38383919806d" />
+XXX screenshot
 
 ## 9. Configurer Autoscale
 Configure une capacité minimale de 1, maximale de 2 et par défaut de 1.  
