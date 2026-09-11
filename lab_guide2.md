@@ -147,30 +147,50 @@ resources :
 
 ## 1. nsg-appgw
 ```Bash
-APPGW_SUBNET="10.0.1.0/24"
 RG_NETWORK="grp_tpaz104-lab"
+VNET_NAME="vnet_tpaz104-lab"
+
 NSG_APPGW="nsg-appgw"
+APPGW_SUBNET="10.0.1.0/24"
+MGMT_SUBNET_PREFIX="10.0.4.0/24"
+
+MGMT_SUBNET_NAME="subnet-mgmt"
+APPGW_PRIVATE_IP="10.0.1.10"
+PRIVATE_LISTENER_PORT="8080"
 ```
 ## INBOUND
 ```Bash
 az network nsg rule create \
   --resource-group "$RG_NETWORK" \
   --nsg-name "$NSG_APPGW" \
-  --name Allow-Internet-Inbound \
+  --name Allow-Internet-To-Public-Listeners \
   --priority 100 \
   --direction Inbound \
   --access Allow \
   --protocol Tcp \
   --source-address-prefix Internet \
   --source-port-range '*' \
-  --destination-address-prefix "$APPGW_SUBNET" \
+  --destination-address-prefix '*' \
   --destination-port-ranges 80 443
 
 az network nsg rule create \
   --resource-group "$RG_NETWORK" \
   --nsg-name "$NSG_APPGW" \
-  --name Allow-GatewayManager-Inbound \
+  --name Allow-Mgmt-To-Private-Listener-8080 \
   --priority 110 \
+  --direction Inbound \
+  --access Allow \
+  --protocol Tcp \
+  --source-address-prefix "$MGMT_SUBNET_PREFIX" \
+  --source-port-range '*' \
+  --destination-address-prefix "$APPGW_PRIVATE_IP" \
+  --destination-port-range "$PRIVATE_LISTENER_PORT"
+
+az network nsg rule create \
+  --resource-group "$RG_NETWORK" \
+  --nsg-name "$NSG_APPGW" \
+  --name Allow-GatewayManager-Inbound \
+  --priority 120 \
   --direction Inbound \
   --access Allow \
   --protocol Tcp \
@@ -183,24 +203,11 @@ az network nsg rule create \
   --resource-group "$RG_NETWORK" \
   --nsg-name "$NSG_APPGW" \
   --name Allow-AzureLoadBalancer-Inbound \
-  --priority 120 \
+  --priority 130 \
   --direction Inbound \
   --access Allow \
   --protocol '*' \
   --source-address-prefix AzureLoadBalancer \
-  --source-port-range '*' \
-  --destination-address-prefix '*' \
-  --destination-port-range '*'
-
-az network nsg rule create \
-  --resource-group "$RG_NETWORK" \
-  --nsg-name "$NSG_APPGW" \
-  --name Deny-All-Inbound \
-  --priority 4096 \
-  --direction Inbound \
-  --access Deny \
-  --protocol '*' \
-  --source-address-prefix '*' \
   --source-port-range '*' \
   --destination-address-prefix '*' \
   --destination-port-range '*'
@@ -244,14 +251,14 @@ az network nsg rule list \
 ```
 ## résultat :
 ```Bash
-Name                             Priority    Direction    Access    Source             Dest            DestPort
--------------------------------  ----------  -----------  --------  -----------------  --------------  -----------
-Allow-Internet-Inbound           100         Inbound      Allow     Internet           10.0.1.0/24
-Deny-All-Inbound                 4096        Inbound      Deny      *                  *               *
-Allow-GatewayManager-Inbound     110         Inbound      Allow     GatewayManager     *               65200-65535
-Allow-AzureLoadBalancer-Inbound  120         Inbound      Allow     AzureLoadBalancer  *               *
-Allow-Internet-Outbound          110         Outbound     Allow     *                  Internet        *
-Allow-VNet-Outbound              100         Outbound     Allow     *                  VirtualNetwork  *
+Name                                 Priority    Direction    Access    Source             Dest            DestPort
+-----------------------------------  ----------  -----------  --------  -----------------  --------------  -----------
+Allow-Internet-To-Public-Listeners   100         Inbound      Allow     Internet           *
+Allow-GatewayManager-Inbound         120         Inbound      Allow     GatewayManager     *               65200-65535
+Allow-AzureLoadBalancer-Inbound      130         Inbound      Allow     AzureLoadBalancer  *               *
+Allow-Mgmt-To-Private-Listener-8080  110         Inbound      Allow     10.0.4.0/24        10.0.1.10       8080
+Allow-VNet-Outbound                  100         Outbound     Allow     *                  VirtualNetwork  *
+Allow-Internet-Outbound              110         Outbound     Allow     *                  Internet        *
 ---
 
 ## 2. nsg-backend-a
