@@ -712,7 +712,7 @@ ls -l ~/appgw.pfx
 ```
 ---
 
-# Phase 5. Déploiement de l'Appliquation-Gateway en Bicep
+# Phase 5 — Déploiement de l’Application Gateway avec Bicep
 
 Phase 5 — Base App Gateway  
   ├── Public IP  
@@ -721,9 +721,8 @@ Phase 5 — Base App Gateway
   ├── pool-web + pool-api  
   └── frontend privé  
 
-10.0.2.4 est un backend temporaire de bootstrap et doit être supprimé après création des pools VMSS.  
-Il ne représente pas une instance VMSS permanente.  
-Il sera remplacé par pool-web et pool-api.  
+Les pools `pool-web` et `pool-api` sont créés vides par le template Bicep.  
+Aucun backend fictif, aucune règle `rule1` et aucun objet bootstrap ne sont créés dans cette phase.  
 La policy commence en mode Detection, puis sera basculée en Prevention dans une étape ultérieure.  
 Le lab utilise OWASP CRS 3.2 afin de reproduire un scénario pédagogique de détection SQL injection.  
 En production, la version de managed ruleset recommandée par Microsoft au moment du déploiement doit être privilégiée.  
@@ -755,7 +754,7 @@ HTTP_SETTING_API="http-setting-api"
 PORT_HTTP_NAME="port-80"
 PORT_HTTPS_NAME="port-443"
 PORT_PRIVATE_HTTP_NAME="port-8080"
-PRIVATE_HTTP_PORT=8080"
+PRIVATE_HTTP_PORT=8080
 
 PUBLIC_FRONTEND_IP="public-frontend-ip"
 PRIVATE_FRONTEND_IP="private-frontend-ip"
@@ -879,10 +878,11 @@ http-setting-api          HTTP/80 + probe-api
 public-frontend-ip        pip-appgw  
 private-frontend-ip       10.0.1.10  
 port-80                   80  
+port-8080                 8080
 port-443                  443  
 listener-public-http      public / 80  
 listener-public-https     public / 443 / certificat  
-listener-private-http     private / 80  
+listener-private-http     private / 8080  
 redirect-http-to-https    permanent / conserve path et query string  
 map-public                défaut Web /api/* API  
 map-private               défaut Web /api/* API  
