@@ -714,13 +714,6 @@ ls -l ~/appgw.pfx
 
 # Phase 5 — Déploiement de l’Application Gateway avec Bicep
 
-Phase 5 — Base App Gateway  
-  ├── Public IP  
-  ├── WAF Policy Detection  
-  ├── App Gateway  
-  ├── pool-web + pool-api  
-  └── frontend privé  
-
 Les pools `pool-web` et `pool-api` sont créés vides par le template Bicep.  
 Aucun backend fictif, aucune règle `rule1` et aucun objet bootstrap ne sont créés dans cette phase.  
 La policy commence en mode Detection, puis sera basculée en Prevention dans une étape ultérieure.  
@@ -1415,6 +1408,7 @@ grep -E \
             "name": "private-frontend-ip",
             "name": "port-80",
             "name": "port-443",
+            "name": "port-8080",
             "name": "pool-web",
             "name": "pool-api",
             "name": "probe-web",
@@ -1431,7 +1425,7 @@ grep -E \
                 "id": "[resourceId('Microsoft.Network/applicationGateways/frontendPorts', parameters('applicationGatewayName'), 'port-443')]"
             "name": "listener-private-http",
                 "id": "[resourceId('Microsoft.Network/applicationGateways/frontendIPConfigurations', parameters('applicationGatewayName'), 'private-frontend-ip')]"
-                "id": "[resourceId('Microsoft.Network/applicationGateways/frontendPorts', parameters('applicationGatewayName'), 'port-80')]"
+                "id": "[resourceId('Microsoft.Network/applicationGateways/frontendPorts', parameters('applicationGatewayName'), 'port-8080')]"
             "name": "redirect-http-to-https",
                 "id": "[resourceId('Microsoft.Network/applicationGateways/httpListeners', parameters('applicationGatewayName'), 'listener-public-https')]"
             "name": "map-public",
@@ -1458,6 +1452,15 @@ grep -E \
 ```
 
 ## 7. Déployer seulement après le contrôle
+### contrôle explicite du subnet
+```Bash
+echo "Subnet App Gateway : $SUBNET_APPGW_ID"
+
+if [ -z "$SUBNET_APPGW_ID" ]; then
+  echo "Erreur : ID du subnet App Gateway vide."
+  exit 1
+fi
+```
 ### Valider sans créer de ressource
 ```Bash
 az deployment group validate \
@@ -1518,9 +1521,34 @@ az network application-gateway show \
 ```
 ### résultat
 ```Bash
-rule-public-path   → priorité 100
-rule-redirect-http → priorité 200
-rule-private-path  → priorité 300
+{
+  "Capacity": 2,
+  "Name": "appgw-lab",
+  "OperationalState": "Running",
+  "Pools": [
+    "pool-web",
+    "pool-api"
+  ],
+  "Rules": [
+    {
+      "Name": "rule-public-path",
+      "Priority": 100,
+      "Type": "PathBasedRouting"
+    },
+    {
+      "Name": "rule-redirect-http",
+      "Priority": 200,
+      "Type": "Basic"
+    },
+    {
+      "Name": "rule-private-path",
+      "Priority": 300,
+      "Type": "PathBasedRouting"
+    }
+  ],
+  "SKU": "WAF_v2",
+  "State": "Succeeded"
+}
 ```
 
 
