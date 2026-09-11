@@ -733,7 +733,6 @@ APPGW_SUBNET_NAME="subnet-appgw"
 APPGW_NAME="appgw-lab"
 PIP_NAME="pip-appgw"
 WAF_POLICY_NAME="waf-policy-lab"
-
 APPGW_PRIVATE_IP="10.0.1.10"
 
 POOL_WEB_NAME="pool-web"
@@ -813,6 +812,8 @@ az network vnet subnet show \
 
 ## 3. Encoder le mot de passe PFX
 ```Bash
+PFX_FILE="$HOME/appgw.pfx"
+
 read -rsp "Mot de passe du certificat appgw.pfx : " PFX_PASSWORD
 echo
 
@@ -820,17 +821,26 @@ if [ -z "$PFX_PASSWORD" ]; then
   echo "Erreur : mot de passe PFX vide."
   exit 1
 fi
-```
-### Encode le PFX
-```Bash
-PFX_DATA_B64=$(base64 -w 0 "$PFX_FILE")
-```
-### Contrôle
-```Bash
+
+if [ ! -f "$PFX_FILE" ]; then
+  echo "Erreur : le fichier $PFX_FILE est introuvable."
+  exit 1
+fi
+
+PFX_DATA_B64=$(base64 "$PFX_FILE" | tr -d '\r\n')
+
 if [ -z "$PFX_DATA_B64" ]; then
   echo "Erreur : impossible d'encoder le PFX."
   exit 1
+else
+  echo "Certificat PFX encodé avec succès (${#PFX_DATA_B64} caractères)."
 fi
+```
+Entrer le mot de passe du fichier appgw.pfx
+### résultat
+```Bash
+Mot de passe du certificat appgw.pfx : 
+Certificat PFX encodé avec succès (3604 caractères).
 ```
 
 ## 4. Créer le Bicep dans Cloud Shell Editor
@@ -939,10 +949,6 @@ resource wafPolicy 'Microsoft.Network/ApplicationGatewayWebApplicationFirewallPo
 resource appGateway 'Microsoft.Network/applicationGateways@2024-07-01' = {
   name: applicationGatewayName
   location: location
-  dependsOn: [
-    publicIp
-    wafPolicy
-  ]
   properties: {
     sku: {
       name: 'WAF_v2'
@@ -1356,26 +1362,20 @@ output poolApiId string = resourceId(
 ### vérification
 ```Bash
 ls -lh "$APPGW_BICEP_FILE"
-```
-```Bash
 wc -l "$APPGW_BICEP_FILE"
 ```
 ### résultat
 ```Bash
 -rw-r--r-- 1 nicolas nicolas 12K Sep 11 10:17 deploy-appgw.bicep
-```
-```Bash
-wc -l "$APPGW_BICEP_FILE"
--rw-r--r-- 1 nicolas nicolas 12K Sep 11 10:17 deploy-appgw.bicep
 477 deploy-appgw.bicep
 ```
 
-## 3. Compiler le Bicep
+## 5. Compiler le Bicep
 ```Bash
 az bicep build \
   --file "$APPGW_BICEP_FILE"
 ```
- warning dans le Bicep pour publicIp et wafPolicy => Ctrl+C
+ warning dans le Bicep pour publicIp et wafPolicy
 ### vérification
 ```Bash
 ls -lh deploy-appgw.json
@@ -1386,7 +1386,7 @@ ls -lh deploy-appgw.json
 ```
 <img width="546" height="256" alt="Capture d&#39;écran 2026-07-29 115425" src="https://github.com/user-attachments/assets/6a746d93-466e-40e1-9df5-f3628fac340d" />
 
-## 4. Vérifier les objets déclarés
+## 6. Vérifier les objets déclarés
 ```Bash
 grep -E \
   'pool-web|pool-api|probe-web|probe-api|http-setting-web|http-setting-api|port-80|port-443|public-frontend-ip|private-frontend-ip|listener-public-http|listener-public-https|listener-private-http|redirect-http-to-https|map-public|map-private|rule-public-path|rule-redirect-http|rule-private-path' \
@@ -1439,6 +1439,73 @@ grep -E \
       "value": "[resourceId('Microsoft.Network/applicationGateways/backendAddressPools', parameters('applicationGatewayName'), 'pool-web')]"
       "value": "[resourceId('Microsoft.Network/applicationGateways/backendAddressPools', parameters('applicationGatewayName'), 'pool-api')]"
 ```
+
+## 7. Déployer seulement après le contrôle
+### Valider sans créer de ressource
+```Bash
+az deployment group validate \
+  --resource-group "$RG_WORKLOAD" \
+  --template-file "$APPGW_BICEP_FILE" \
+  --parameters \
+    location="$LOCATION" \
+    applicationGatewayName="$APPGW_NAME" \
+    publicIpName="$PIP_NAME" \
+    appGatewaySubnetId="$SUBNET_APPGW_ID" \
+    privateFrontendIpAddress="$APPGW_PRIVATE_IP" \
+    wafPolicyName="$WAF_POLICY_NAME" \
+    sslCertificateName="$PFX_CERT_NAME" \
+    sslCertificateData="$PFX_DATA_B64" \
+    sslCertificatePassword="$PFX_PASSWORD"
+```
+### Déployer
+```Bash
+az deployment group create \
+  --resource-group "$RG_WORKLOAD" \
+  --name "$APPGW_DEPLOYMENT_NAME" \
+  --template-file "$APPGW_BICEP_FILE" \
+  --parameters \
+    location="$LOCATION" \
+    applicationGatewayName="$APPGW_NAME" \
+    publicIpName="$PIP_NAME" \
+    appGatewaySubnetId="$SUBNET_APPGW_ID" \
+    privateFrontendIpAddress="$APPGW_PRIVATE_IP" \
+    wafPolicyName="$WAF_POLICY_NAME" \
+    sslCertificateName="$PFX_CERT_NAME" \
+    sslCertificateData="$PFX_DATA_B64" \
+    sslCertificatePassword="$PFX_PASSWORD"
+```
+### éffacer les secrets de la session
+```Bash
+unset PFX_PASSWORD
+unset PFX_DATA_B64
+```
+### vérifier l’état de la passerelle
+```Bash
+az network application-gateway show \
+  --resource-group "$RG_WORKLOAD" \
+  --name "$APPGW_NAME" \
+  --query "{
+    Name:name,
+    State:provisioningState,
+    OperationalState:operationalState,
+    SKU:sku.name,
+    Capacity:sku.capacity,
+    Pools:backendAddressPools[].name,
+    Rules:requestRoutingRules[].{
+      Name:name,
+      Priority:priority,
+      Type:ruleType
+    }
+  }" \
+  --output jsonc
+```
+### résultat
+```Bash
+rule-public-path   → priorité 100
+rule-redirect-http → priorité 200
+rule-private-path  → priorité 300
+```
+
 
 
 
