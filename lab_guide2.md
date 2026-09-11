@@ -2281,35 +2281,70 @@ done
 ```
 ### Vérifier les instances
 ```Bash.
-az vmss list-instances \
+az vmss list \
   --resource-group "$RG_WORKLOAD" \
-  --name "$VMSS_WEB_NAME" \
   --query "[].{
-    InstanceId:instanceId,
-    ProvisioningState:provisioningState,
-    PowerState:instanceView.statuses[?starts_with(code, 'PowerState/')].displayStatus | [0]
-  }" \
-  --output table
-
-az vmss list-instances \
-  --resource-group "$RG_WORKLOAD" \
-  --name "$VMSS_API_NAME" \
-  --query "[].{
-    InstanceId:instanceId,
-    ProvisioningState:provisioningState,
-    PowerState:instanceView.statuses[?starts_with(code, 'PowerState/')].displayStatus | [0]
+    Name:name,
+    Capacity:sku.capacity,
+    State:provisioningState,
+    Mode:orchestrationMode
   }" \
   --output table
 ```
 ### résultat
 ```Bash
-LInstanceId    ProvisioningState
-------------  -------------------
-0             Succeeded
-InstanceId    ProvisioningState
-------------  -------------------
-0             Succeeded
+Name      Capacity    State      Mode
+--------  ----------  ---------  -------
+vmss-api  1           Succeeded  Uniform
+vmss-web  1           Succeeded  Uniform
 ```
+### Vérifier les associations pools
+```Bash
+az vmss show \
+  --resource-group "$RG_WORKLOAD" \
+  --name "$VMSS_WEB_NAME" \
+  --query "virtualMachineProfile.networkProfile.networkInterfaceConfigurations[0].ipConfigurations[0].applicationGatewayBackendAddressPools[].id" \
+  --output tsv
+
+az vmss show \
+  --resource-group "$RG_WORKLOAD" \
+  --name "$VMSS_API_NAME" \
+  --query "virtualMachineProfile.networkProfile.networkInterfaceConfigurations[0].ipConfigurations[0].applicationGatewayBackendAddressPools[].id" \
+  --output tsv
+```
+### résultat
+```Bash
+/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendAddressPools/pool-web
+/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendAddressPools/pool-api
+```
+###
+```Bash
+az network application-gateway show-backend-health \
+  --resource-group "$RG_WORKLOAD" \
+  --name "$APPGW_NAME" \
+  --query "backendAddressPools[].backendHttpSettingsCollection[].servers[].{
+    Address:address,
+    Health:health,
+    ProbeLog:healthProbeLog
+  }" \
+  --output jsonc
+```
+### résultat
+```Bash
+[
+  {
+    "Address": "10.0.3.4",
+    "Health": "Healthy",
+    "ProbeLog": "Success. Received 200 status code"
+  },
+  {
+    "Address": "10.0.2.4",
+    "Health": "Healthy",
+    "ProbeLog": "Success. Received 200 status code"
+  }
+]
+```
+<img width="536" height="280" alt="Capture d&#39;écran 2026-09-11 164131" src="https://github.com/user-attachments/assets/caf9aa2b-015e-48ad-a46d-08b99f7939c0" />
 ### Vérifier l’absence de Load Balancer et PIP VMSS
 ```Bash
 echo "=== Load Balancers du resource group workload ==="
