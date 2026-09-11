@@ -705,7 +705,7 @@ ls -l ~/appgw.pfx
 ```
 ---
 
-# Phase 5. Déploiement de l'Appliquation-Gateway
+# Phase 5. Déploiement de l'Appliquation-Gateway en Bicep
 
 Phase 5 — Base App Gateway  
   ├── Public IP  
@@ -726,13 +726,59 @@ En production, la version de managed ruleset recommandée par Microsoft au momen
 RG_NETWORK="grp_tpaz104-lab"
 RG_WORKLOAD="grp_tpaz104-lab2"
 LOCATION="westeurope"
+
 VNET_NAME="vnet_tpaz104-lab"
 APPGW_SUBNET_NAME="subnet-appgw"
+
 APPGW_NAME="appgw-lab"
 PIP_NAME="pip-appgw"
 WAF_POLICY_NAME="waf-policy-lab"
+
+APPGW_PRIVATE_IP="10.0.1.10"
+
+POOL_WEB_NAME="pool-web"
+POOL_API_NAME="pool-api"
+
+PROBE_WEB_NAME="probe-web"
+PROBE_API_NAME="probe-api"
+
+HTTP_SETTING_WEB="http-setting-web"
+HTTP_SETTING_API="http-setting-api"
+
+PORT_HTTP_NAME="port-80"
+PORT_HTTPS_NAME="port-443"
+
+PUBLIC_FRONTEND_IP="public-frontend-ip"
+PRIVATE_FRONTEND_IP="private-frontend-ip"
+
+PUBLIC_HTTP_LISTENER="listener-public-http"
+PUBLIC_HTTPS_LISTENER="listener-public-https"
+PRIVATE_HTTP_LISTENER="listener-private-http"
+
+REDIRECT_HTTP_TO_HTTPS="redirect-http-to-https"
+
+MAP_PUBLIC="map-public"
+MAP_PRIVATE="map-private"
+
+RULE_PUBLIC_PATH="rule-public-path"
+RULE_REDIRECT_HTTP="rule-redirect-http"
+RULE_PRIVATE_PATH="rule-private-path"
+
 PFX_FILE="$HOME/appgw.pfx"
-PLACEHOLDER_BACKEND="10.0.2.4"
+PFX_CERT_NAME="appgw-labSslCert"
+
+APPGW_BICEP_FILE="deploy-appgw.bicep"
+APPGW_DEPLOYMENT_NAME="deploy-appgw-complete"
+```
+### Contrôle
+```Bash
+printf '%s\n' \
+  "RG_NETWORK=$RG_NETWORK" \
+  "RG_WORKLOAD=$RG_WORKLOAD" \
+  "LOCATION=$LOCATION" \
+  "APPGW_NAME=$APPGW_NAME" \
+  "PFX_FILE=$PFX_FILE" \
+  "APPGW_PRIVATE_IP=$APPGW_PRIVATE_IP"
 ```
 
 ## 2. Récupérer l’ID du subnet App Gateway
@@ -764,6 +810,549 @@ az network vnet subnet show \
   "Prefix": "10.0.1.0/24",
   "Subnet": "subnet-appgw"
 ```
+
+## 3. Encoder le mot de passe PFX
+```Bash
+read -rsp "Mot de passe du certificat appgw.pfx : " PFX_PASSWORD
+echo
+
+if [ -z "$PFX_PASSWORD" ]; then
+  echo "Erreur : mot de passe PFX vide."
+  exit 1
+fi
+```
+### Encode le PFX
+```Bash
+PFX_DATA_B64=$(base64 -w 0 "$PFX_FILE")
+```
+### Contrôle
+```Bash
+if [ -z "$PFX_DATA_B64" ]; then
+  echo "Erreur : impossible d'encoder le PFX."
+  exit 1
+fi
+```
+
+## 4. Créer le fichier Bicep
+Ouvrir Editor dans Azure Cloud Shell => Ctrl+S => deploy-appgw.bicep => Sauvegarder
+### Contrôle
+```Bash
+ls -lh "$APPGW_BICEP_FILE"
+```
+### Ce que contiendra le Bicep
+Le fichier déclarera directement ces ressources dans le groupe grp_tpaz104-lab2 :  
+pip-appgw  
+waf-policy-lab  
+appgw-lab  
+
+Et l’Application Gateway contiendra immédiatement :  
+pool-web                  vide  
+pool-api                  vide  
+probe-web                 GET /, HTTP/80  
+probe-api                 GET /api/health, HTTP/80  
+http-setting-web          HTTP/80 + probe-web  
+http-setting-api          HTTP/80 + probe-api  
+public-frontend-ip        pip-appgw  
+private-frontend-ip       10.0.1.10  
+port-80                   80  
+port-443                  443  
+listener-public-http      public / 80  
+listener-public-https     public / 443 / certificat  
+listener-private-http     private / 80  
+redirect-http-to-https    permanent / conserve path et query string  
+map-public                défaut Web /api/* API  
+map-private               défaut Web /api/* API  
+rule-public-path          priorité 100  
+rule-redirect-http        priorité 200  
+rule-private-path         priorité 300  
+
+## 5. Créer le Bicep dans Cloud Shell Editor
+Ouvrir Editor dans Azure Cloud Shell, ouvrir deploy-appgw.bicep, puis coller le contenu complet ci-dessous. Sauvegarde avec Ctrl+S.
+
+```Bash
+@description('Azure region for all Application Gateway resources.')
+param location string
+
+@description('Application Gateway name.')
+param applicationGatewayName string
+
+@description('Public IP address resource name.')
+param publicIpName string
+
+@description('Full resource ID of the dedicated Application Gateway subnet.')
+param appGatewaySubnetId string
+
+@description('Static private frontend IP address in the Application Gateway subnet.')
+param privateFrontendIpAddress string
+
+@description('PFX certificate data encoded in Base64.')
+@secure()
+param sslCertificateData string
+
+@description('Password protecting the PFX certificate.')
+@secure()
+param sslCertificatePassword string
+
+@description('WAF policy name.')
+param wafPolicyName string
+
+@description('SSL certificate object name inside the Application Gateway.')
+param sslCertificateName string = 'appgw-labSslCert'
+
+resource publicIp 'Microsoft.Network/publicIPAddresses@2024-07-01' = {
+  name: publicIpName
+  location: location
+  sku: {
+    name: 'Standard'
+  }
+  properties: {
+    publicIPAllocationMethod: 'Static'
+  }
+}
+
+resource wafPolicy 'Microsoft.Network/ApplicationGatewayWebApplicationFirewallPolicies@2024-07-01' = {
+  name: wafPolicyName
+  location: location
+  properties: {
+    policySettings: {
+      state: 'Enabled'
+      mode: 'Detection'
+      requestBodyCheck: true
+      maxRequestBodySizeInKb: 128
+      fileUploadLimitInMb: 100
+    }
+    managedRules: {
+      managedRuleSets: [
+        {
+          ruleSetType: 'OWASP'
+          ruleSetVersion: '3.2'
+        }
+      ]
+    }
+  }
+}
+
+resource appGateway 'Microsoft.Network/applicationGateways@2024-07-01' = {
+  name: applicationGatewayName
+  location: location
+  dependsOn: [
+    publicIp
+    wafPolicy
+  ]
+  properties: {
+    sku: {
+      name: 'WAF_v2'
+      tier: 'WAF_v2'
+      capacity: 2
+    }
+
+    gatewayIPConfigurations: [
+      {
+        name: 'gateway-ip-config'
+        properties: {
+          subnet: {
+            id: appGatewaySubnetId
+          }
+        }
+      }
+    ]
+
+    frontendIPConfigurations: [
+      {
+        name: 'public-frontend-ip'
+        properties: {
+          publicIPAddress: {
+            id: publicIp.id
+          }
+        }
+      }
+      {
+        name: 'private-frontend-ip'
+        properties: {
+          privateIPAddress: privateFrontendIpAddress
+          privateIPAllocationMethod: 'Static'
+          subnet: {
+            id: appGatewaySubnetId
+          }
+        }
+      }
+    ]
+
+    frontendPorts: [
+      {
+        name: 'port-80'
+        properties: {
+          port: 80
+        }
+      }
+      {
+        name: 'port-443'
+        properties: {
+          port: 443
+        }
+      }
+    ]
+
+    sslCertificates: [
+      {
+        name: sslCertificateName
+        properties: {
+          data: sslCertificateData
+          password: sslCertificatePassword
+        }
+      }
+    ]
+
+    backendAddressPools: [
+      {
+        name: 'pool-web'
+        properties: {}
+      }
+      {
+        name: 'pool-api'
+        properties: {}
+      }
+    ]
+
+    probes: [
+      {
+        name: 'probe-web'
+        properties: {
+          protocol: 'Http'
+          host: '127.0.0.1'
+          path: '/'
+          port: 80
+          interval: 30
+          timeout: 30
+          unhealthyThreshold: 3
+          match: {
+            statusCodes: [
+              '200-399'
+            ]
+          }
+        }
+      }
+      {
+        name: 'probe-api'
+        properties: {
+          protocol: 'Http'
+          host: '127.0.0.1'
+          path: '/api/health'
+          port: 80
+          interval: 30
+          timeout: 30
+          unhealthyThreshold: 3
+          match: {
+            statusCodes: [
+              '200-399'
+            ]
+          }
+        }
+      }
+    ]
+
+    backendHttpSettingsCollection: [
+      {
+        name: 'http-setting-web'
+        properties: {
+          port: 80
+          protocol: 'Http'
+          cookieBasedAffinity: 'Disabled'
+          requestTimeout: 30
+          probe: {
+            id: resourceId(
+              'Microsoft.Network/applicationGateways/probes',
+              applicationGatewayName,
+              'probe-web'
+            )
+          }
+        }
+      }
+      {
+        name: 'http-setting-api'
+        properties: {
+          port: 80
+          protocol: 'Http'
+          cookieBasedAffinity: 'Disabled'
+          requestTimeout: 30
+          probe: {
+            id: resourceId(
+              'Microsoft.Network/applicationGateways/probes',
+              applicationGatewayName,
+              'probe-api'
+            )
+          }
+        }
+      }
+    ]
+
+    httpListeners: [
+      {
+        name: 'listener-public-http'
+        properties: {
+          protocol: 'Http'
+          frontendIPConfiguration: {
+            id: resourceId(
+              'Microsoft.Network/applicationGateways/frontendIPConfigurations',
+              applicationGatewayName,
+              'public-frontend-ip'
+            )
+          }
+          frontendPort: {
+            id: resourceId(
+              'Microsoft.Network/applicationGateways/frontendPorts',
+              applicationGatewayName,
+              'port-80'
+            )
+          }
+        }
+      }
+      {
+        name: 'listener-public-https'
+        properties: {
+          protocol: 'Https'
+          frontendIPConfiguration: {
+            id: resourceId(
+              'Microsoft.Network/applicationGateways/frontendIPConfigurations',
+              applicationGatewayName,
+              'public-frontend-ip'
+            )
+          }
+          frontendPort: {
+            id: resourceId(
+              'Microsoft.Network/applicationGateways/frontendPorts',
+              applicationGatewayName,
+              'port-443'
+            )
+          }
+          sslCertificate: {
+            id: resourceId(
+              'Microsoft.Network/applicationGateways/sslCertificates',
+              applicationGatewayName,
+              sslCertificateName
+            )
+          }
+        }
+      }
+      {
+        name: 'listener-private-http'
+        properties: {
+          protocol: 'Http'
+          frontendIPConfiguration: {
+            id: resourceId(
+              'Microsoft.Network/applicationGateways/frontendIPConfigurations',
+              applicationGatewayName,
+              'private-frontend-ip'
+            )
+          }
+          frontendPort: {
+            id: resourceId(
+              'Microsoft.Network/applicationGateways/frontendPorts',
+              applicationGatewayName,
+              'port-80'
+            )
+          }
+        }
+      }
+    ]
+
+    redirectConfigurations: [
+      {
+        name: 'redirect-http-to-https'
+        properties: {
+          redirectType: 'Permanent'
+          targetListener: {
+            id: resourceId(
+              'Microsoft.Network/applicationGateways/httpListeners',
+              applicationGatewayName,
+              'listener-public-https'
+            )
+          }
+          includePath: true
+          includeQueryString: true
+        }
+      }
+    ]
+
+    urlPathMaps: [
+      {
+        name: 'map-public'
+        properties: {
+          defaultBackendAddressPool: {
+            id: resourceId(
+              'Microsoft.Network/applicationGateways/backendAddressPools',
+              applicationGatewayName,
+              'pool-web'
+            )
+          }
+          defaultBackendHttpSettings: {
+            id: resourceId(
+              'Microsoft.Network/applicationGateways/backendHttpSettingsCollection',
+              applicationGatewayName,
+              'http-setting-web'
+            )
+          }
+          pathRules: [
+            {
+              name: 'api-route'
+              properties: {
+                paths: [
+                  '/api/*'
+                ]
+                backendAddressPool: {
+                  id: resourceId(
+                    'Microsoft.Network/applicationGateways/backendAddressPools',
+                    applicationGatewayName,
+                    'pool-api'
+                  )
+                }
+                backendHttpSettings: {
+                  id: resourceId(
+                    'Microsoft.Network/applicationGateways/backendHttpSettingsCollection',
+                    applicationGatewayName,
+                    'http-setting-api'
+                  )
+                }
+              }
+            }
+          ]
+        }
+      }
+      {
+        name: 'map-private'
+        properties: {
+          defaultBackendAddressPool: {
+            id: resourceId(
+              'Microsoft.Network/applicationGateways/backendAddressPools',
+              applicationGatewayName,
+              'pool-web'
+            )
+          }
+          defaultBackendHttpSettings: {
+            id: resourceId(
+              'Microsoft.Network/applicationGateways/backendHttpSettingsCollection',
+              applicationGatewayName,
+              'http-setting-web'
+            )
+          }
+          pathRules: [
+            {
+              name: 'api-route'
+              properties: {
+                paths: [
+                  '/api/*'
+                ]
+                backendAddressPool: {
+                  id: resourceId(
+                    'Microsoft.Network/applicationGateways/backendAddressPools',
+                    applicationGatewayName,
+                    'pool-api'
+                  )
+                }
+                backendHttpSettings: {
+                  id: resourceId(
+                    'Microsoft.Network/applicationGateways/backendHttpSettingsCollection',
+                    applicationGatewayName,
+                    'http-setting-api'
+                  )
+                }
+              }
+            }
+          ]
+        }
+      }
+    ]
+
+    requestRoutingRules: [
+      {
+        name: 'rule-public-path'
+        properties: {
+          ruleType: 'PathBasedRouting'
+          priority: 100
+          httpListener: {
+            id: resourceId(
+              'Microsoft.Network/applicationGateways/httpListeners',
+              applicationGatewayName,
+              'listener-public-https'
+            )
+          }
+          urlPathMap: {
+            id: resourceId(
+              'Microsoft.Network/applicationGateways/urlPathMaps',
+              applicationGatewayName,
+              'map-public'
+            )
+          }
+        }
+      }
+      {
+        name: 'rule-redirect-http'
+        properties: {
+          ruleType: 'Basic'
+          priority: 200
+          httpListener: {
+            id: resourceId(
+              'Microsoft.Network/applicationGateways/httpListeners',
+              applicationGatewayName,
+              'listener-public-http'
+            )
+          }
+          redirectConfiguration: {
+            id: resourceId(
+              'Microsoft.Network/applicationGateways/redirectConfigurations',
+              applicationGatewayName,
+              'redirect-http-to-https'
+            )
+          }
+        }
+      }
+      {
+        name: 'rule-private-path'
+        properties: {
+          ruleType: 'PathBasedRouting'
+          priority: 300
+          httpListener: {
+            id: resourceId(
+              'Microsoft.Network/applicationGateways/httpListeners',
+              applicationGatewayName,
+              'listener-private-http'
+            )
+          }
+          urlPathMap: {
+            id: resourceId(
+              'Microsoft.Network/applicationGateways/urlPathMaps',
+              applicationGatewayName,
+              'map-private'
+            )
+          }
+        }
+      }
+    ]
+
+    firewallPolicy: {
+      id: wafPolicy.id
+    }
+  }
+}
+
+output applicationGatewayId string = appGateway.id
+output publicIpResourceId string = publicIp.id
+output wafPolicyId string = wafPolicy.id
+output poolWebId string = resourceId(
+  'Microsoft.Network/applicationGateways/backendAddressPools',
+  applicationGatewayName,
+  'pool-web'
+)
+output poolApiId string = resourceId(
+  'Microsoft.Network/applicationGateways/backendAddressPools',
+  applicationGatewayName,
+  'pool-api'
+)
+```
+
+
+
+
 
 ## 3. Créer l’adresse IP publique de l’Application Gateway
 ```Bash
