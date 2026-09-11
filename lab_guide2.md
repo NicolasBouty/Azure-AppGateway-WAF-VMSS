@@ -1499,7 +1499,9 @@ az deployment group create \
 unset PFX_PASSWORD
 unset PFX_DATA_B64
 ```
-### vérifier l’état de la passerelle
+
+# ✅ Phase 5 — Vérification
+## 1. vérifier l’état de la passerelle
 ```Bash
 az network application-gateway show \
   --resource-group "$RG_WORKLOAD" \
@@ -1550,6 +1552,237 @@ az network application-gateway show \
   "State": "Succeeded"
 }
 ```
+
+## 2. IP publique
+```Bash
+az network public-ip show \
+  --resource-group "$RG_WORKLOAD" \
+  --name "$PIP_NAME" \
+  --query "{
+    Name:name,
+    IP:ipAddress,
+    SKU:sku.name,
+    Allocation:publicIPAllocationMethod,
+    AssociatedTo:ipConfiguration.id
+  }" \
+  --output jsonc
+```
+### résultat
+```Bash
+{
+  "Allocation": "Static",
+  "AssociatedTo": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/frontendIPConfigurations/public-frontend-ip",
+  "IP": "XXX.XXX.XXX.XXX",
+  "Name": "pip-appgw",
+  "SKU": "Standard"
+}
+```
+## 3. vérification des Frontends, ports et listeners
+```Bash
+{
+  "Frontends": [
+    {
+      "Allocation": "Dynamic",
+      "Name": "public-frontend-ip",
+      "PrivateIP": null,
+      "PublicIP": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/publicIPAddresses/pip-appgw"
+    },
+    {
+      "Allocation": "Static",
+      "Name": "private-frontend-ip",
+      "PrivateIP": "10.0.1.10",
+      "PublicIP": null
+    }
+  ],
+  "Listeners": [
+    {
+      "CertificateId": null,
+      "FrontendIPId": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/frontendIPConfigurations/public-frontend-ip",
+      "FrontendPortId": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/frontendPorts/port-80",
+      "Name": "listener-public-http",
+      "Protocol": "Http"
+    },
+    {
+      "CertificateId": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/sslCertificates/appgw-labSslCert",
+      "FrontendIPId": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/frontendIPConfigurations/public-frontend-ip",
+      "FrontendPortId": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/frontendPorts/port-443",
+      "Name": "listener-public-https",
+      "Protocol": "Https"
+    },
+    {
+      "CertificateId": null,
+      "FrontendIPId": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/frontendIPConfigurations/private-frontend-ip",
+      "FrontendPortId": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/frontendPorts/port-8080",
+      "Name": "listener-private-http",
+      "Protocol": "Http"
+    }
+  ],
+  "Ports": [
+    {
+      "Name": "port-80",
+      "Port": 80
+    },
+    {
+      "Name": "port-443",
+      "Port": 443
+    },
+    {
+      "Name": "port-8080",
+      "Port": 8080
+    }
+  ]
+}
+```
+## 4. vérification waf-policy
+```Bash
+az network application-gateway waf-policy show \
+  --resource-group "$RG_WORKLOAD" \
+  --name "$WAF_POLICY_NAME" \
+  --query "{
+    Name:name,
+    State:policySettings.state,
+    Mode:policySettings.mode,
+    RequestBodyCheck:policySettings.requestBodyCheck,
+    RuleSets:managedRules.managedRuleSets[].{
+      Type:ruleSetType,
+      Version:ruleSetVersion
+    }
+  }" \
+  --output jsonc
+```
+### résultat
+```Bash
+{
+  "Mode": "Detection",
+  "Name": "waf-policy-lab",
+  "RequestBodyCheck": true,
+  "RuleSets": [
+    {
+      "Type": "OWASP",
+      "Version": "3.2"
+    }
+  ],
+  "State": "Enabled"
+}
+```
+## 5. vérification de Path maps et redirection
+```Bash
+az network application-gateway show \
+  --resource-group "$RG_WORKLOAD" \
+  --name "$APPGW_NAME" \
+  --query "{
+    Redirects:redirectConfigurations[].{
+      Name:name,
+      Type:redirectType,
+      TargetListenerId:targetListener.id,
+      IncludePath:includePath,
+      IncludeQueryString:includeQueryString
+    },
+    PathMaps:urlPathMaps[].{
+      Name:name,
+      DefaultPoolId:defaultBackendAddressPool.id,
+      DefaultSettingId:defaultBackendHttpSettings.id,
+      Paths:pathRules[].{
+        Name:name,
+        Patterns:paths,
+        PoolId:backendAddressPool.id,
+        SettingId:backendHttpSettings.id
+      }
+    }
+  }" \
+  --output jsonc
+```
+### résultat
+```Bash
+{
+  "PathMaps": [
+    {
+      "DefaultPoolId": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendAddressPools/pool-web",
+      "DefaultSettingId": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendHttpSettingsCollection/http-setting-web",
+      "Name": "map-public",
+      "Paths": [
+        {
+          "Name": "api-route",
+          "Patterns": [
+            "/api/*"
+          ],
+          "PoolId": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendAddressPools/pool-api",
+          "SettingId": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendHttpSettingsCollection/http-setting-api"
+        }
+      ]
+    },
+    {
+      "DefaultPoolId": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendAddressPools/pool-web",
+      "DefaultSettingId": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendHttpSettingsCollection/http-setting-web",
+      "Name": "map-private",
+      "Paths": [
+        {
+          "Name": "api-route",
+          "Patterns": [
+            "/api/*"
+          ],
+          "PoolId": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendAddressPools/pool-api",
+          "SettingId": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendHttpSettingsCollection/http-setting-api"
+        }
+      ]
+    }
+  ],
+  "Redirects": [
+    {
+      "IncludePath": true,
+      "IncludeQueryString": true,
+      "Name": "redirect-http-to-https",
+      "TargetListenerId": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/httpListeners/listener-public-https",
+      "Type": "Permanent"
+    }
+  ]
+}
+```
+## 6. show-backend-health
+```Bash
+az network application-gateway show-backend-health \
+  --resource-group "$RG_WORKLOAD" \
+  --name "$APPGW_NAME" \
+  --output jsonc
+```
+### résultat
+```Bash
+{
+  "backendAddressPools": [
+    {
+      "backendAddressPool": {
+        "id": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendAddressPools/pool-api",
+        "resourceGroup": "grp_tpaz104-lab2"
+      },
+      "backendHttpSettingsCollection": [
+        {
+          "backendHttpSettings": {
+            "id": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendHttpSettingsCollection/http-setting-api",
+            "resourceGroup": "grp_tpaz104-lab2"
+          },
+          "servers": []
+        }
+      ]
+    },
+    {
+      "backendAddressPool": {
+        "id": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendAddressPools/pool-web",
+        "resourceGroup": "grp_tpaz104-lab2"
+      },
+      "backendHttpSettingsCollection": [
+        {
+          "backendHttpSettings": {
+            "id": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendHttpSettingsCollection/http-setting-web",
+            "resourceGroup": "grp_tpaz104-lab2"
+          },
+          "servers": []
+        }
+      ]
+    }
+  ]
+}
+```
+
 
 
 
