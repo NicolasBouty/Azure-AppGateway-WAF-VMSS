@@ -833,13 +833,17 @@ if [ -z "$PFX_DATA_B64" ]; then
 fi
 ```
 
-## 4. Créer le fichier Bicep
+## 4. Créer le Bicep dans Cloud Shell Editor
 Ouvrir Editor dans Azure Cloud Shell => Ctrl+S => deploy-appgw.bicep => Sauvegarder
 ### Contrôle
 ```Bash
 ls -lh "$APPGW_BICEP_FILE"
 ```
-### Ce que contiendra le Bicep
+### résultat
+```Bash
+-rw-r--r-- 1 nicolas nicolas 12K Sep 11 10:17 deploy-appgw.bicep
+```
+### 1. Ce que contiendra le Bicep
 Le fichier déclarera directement ces ressources dans le groupe grp_tpaz104-lab2 :  
 pip-appgw  
 waf-policy-lab  
@@ -866,7 +870,7 @@ rule-public-path          priorité 100
 rule-redirect-http        priorité 200  
 rule-private-path         priorité 300  
 
-## 5. Créer le Bicep dans Cloud Shell Editor
+### 2. Créer le contenu du fichier deploy-appgw.bicep
 Ouvrir Editor dans Azure Cloud Shell, ouvrir deploy-appgw.bicep, puis coller le contenu complet ci-dessous. Sauvegarde avec Ctrl+S.
 
 ```Bash
@@ -1349,10 +1353,101 @@ output poolApiId string = resourceId(
   'pool-api'
 )
 ```
+### vérification
+```Bash
+ls -lh "$APPGW_BICEP_FILE"
+```
+```Bash
+wc -l "$APPGW_BICEP_FILE"
+```
+### résultat
+```Bash
+-rw-r--r-- 1 nicolas nicolas 12K Sep 11 10:17 deploy-appgw.bicep
+```
+```Bash
+wc -l "$APPGW_BICEP_FILE"
+-rw-r--r-- 1 nicolas nicolas 12K Sep 11 10:17 deploy-appgw.bicep
+477 deploy-appgw.bicep
+```
+
+## 3. Compiler le Bicep
+```Bash
+az bicep build \
+  --file "$APPGW_BICEP_FILE"
+```
+ warning dans le Bicep pour publicIp et wafPolicy => Ctrl+C
+### vérification
+```Bash
+ls -lh deploy-appgw.json
+```
+### résultat
+```Bash
+-rw-r--r-- 1 nicolas nicolas 15K Sep 11 10:31 deploy-appgw.json
+```
+<img width="546" height="256" alt="Capture d&#39;écran 2026-07-29 115425" src="https://github.com/user-attachments/assets/6a746d93-466e-40e1-9df5-f3628fac340d" />
+
+## 4. Vérifier les objets déclarés
+```Bash
+grep -E \
+  'pool-web|pool-api|probe-web|probe-api|http-setting-web|http-setting-api|port-80|port-443|public-frontend-ip|private-frontend-ip|listener-public-http|listener-public-https|listener-private-http|redirect-http-to-https|map-public|map-private|rule-public-path|rule-redirect-http|rule-private-path' \
+  deploy-appgw.json
+```
+### résultat
+```Bash
+            "name": "public-frontend-ip",
+            "name": "private-frontend-ip",
+            "name": "port-80",
+            "name": "port-443",
+            "name": "pool-web",
+            "name": "pool-api",
+            "name": "probe-web",
+            "name": "probe-api",
+            "name": "http-setting-web",
+                "id": "[resourceId('Microsoft.Network/applicationGateways/probes', parameters('applicationGatewayName'), 'probe-web')]"
+            "name": "http-setting-api",
+                "id": "[resourceId('Microsoft.Network/applicationGateways/probes', parameters('applicationGatewayName'), 'probe-api')]"
+            "name": "listener-public-http",
+                "id": "[resourceId('Microsoft.Network/applicationGateways/frontendIPConfigurations', parameters('applicationGatewayName'), 'public-frontend-ip')]"
+                "id": "[resourceId('Microsoft.Network/applicationGateways/frontendPorts', parameters('applicationGatewayName'), 'port-80')]"
+            "name": "listener-public-https",
+                "id": "[resourceId('Microsoft.Network/applicationGateways/frontendIPConfigurations', parameters('applicationGatewayName'), 'public-frontend-ip')]"
+                "id": "[resourceId('Microsoft.Network/applicationGateways/frontendPorts', parameters('applicationGatewayName'), 'port-443')]"
+            "name": "listener-private-http",
+                "id": "[resourceId('Microsoft.Network/applicationGateways/frontendIPConfigurations', parameters('applicationGatewayName'), 'private-frontend-ip')]"
+                "id": "[resourceId('Microsoft.Network/applicationGateways/frontendPorts', parameters('applicationGatewayName'), 'port-80')]"
+            "name": "redirect-http-to-https",
+                "id": "[resourceId('Microsoft.Network/applicationGateways/httpListeners', parameters('applicationGatewayName'), 'listener-public-https')]"
+            "name": "map-public",
+                "id": "[resourceId('Microsoft.Network/applicationGateways/backendAddressPools', parameters('applicationGatewayName'), 'pool-web')]"
+                "id": "[resourceId('Microsoft.Network/applicationGateways/backendHttpSettingsCollection', parameters('applicationGatewayName'), 'http-setting-web')]"
+                      "id": "[resourceId('Microsoft.Network/applicationGateways/backendAddressPools', parameters('applicationGatewayName'), 'pool-api')]"
+                      "id": "[resourceId('Microsoft.Network/applicationGateways/backendHttpSettingsCollection', parameters('applicationGatewayName'), 'http-setting-api')]"
+            "name": "map-private",
+                "id": "[resourceId('Microsoft.Network/applicationGateways/backendAddressPools', parameters('applicationGatewayName'), 'pool-web')]"
+                "id": "[resourceId('Microsoft.Network/applicationGateways/backendHttpSettingsCollection', parameters('applicationGatewayName'), 'http-setting-web')]"
+                      "id": "[resourceId('Microsoft.Network/applicationGateways/backendAddressPools', parameters('applicationGatewayName'), 'pool-api')]"
+                      "id": "[resourceId('Microsoft.Network/applicationGateways/backendHttpSettingsCollection', parameters('applicationGatewayName'), 'http-setting-api')]"
+            "name": "rule-public-path",
+                "id": "[resourceId('Microsoft.Network/applicationGateways/httpListeners', parameters('applicationGatewayName'), 'listener-public-https')]"
+                "id": "[resourceId('Microsoft.Network/applicationGateways/urlPathMaps', parameters('applicationGatewayName'), 'map-public')]"
+            "name": "rule-redirect-http",
+                "id": "[resourceId('Microsoft.Network/applicationGateways/httpListeners', parameters('applicationGatewayName'), 'listener-public-http')]"
+                "id": "[resourceId('Microsoft.Network/applicationGateways/redirectConfigurations', parameters('applicationGatewayName'), 'redirect-http-to-https')]"
+            "name": "rule-private-path",
+                "id": "[resourceId('Microsoft.Network/applicationGateways/httpListeners', parameters('applicationGatewayName'), 'listener-private-http')]"
+                "id": "[resourceId('Microsoft.Network/applicationGateways/urlPathMaps', parameters('applicationGatewayName'), 'map-private')]"
+      "value": "[resourceId('Microsoft.Network/applicationGateways/backendAddressPools', parameters('applicationGatewayName'), 'pool-web')]"
+      "value": "[resourceId('Microsoft.Network/applicationGateways/backendAddressPools', parameters('applicationGatewayName'), 'pool-api')]"
+```
 
 
 
-
+### vérification
+```Bash
+```
+### résultat
+```Bash
+```
 
 ## 3. Créer l’adresse IP publique de l’Application Gateway
 ```Bash
