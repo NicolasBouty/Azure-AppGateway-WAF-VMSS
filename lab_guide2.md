@@ -729,6 +729,7 @@ LOCATION="westeurope"
 
 VNET_NAME="vnet_tpaz104-lab"
 APPGW_SUBNET_NAME="subnet-appgw"
+MGMT_SUBNET_NAME="subnet-mgmt"
 
 APPGW_NAME="appgw-lab"
 PIP_NAME="pip-appgw"
@@ -746,6 +747,8 @@ HTTP_SETTING_API="http-setting-api"
 
 PORT_HTTP_NAME="port-80"
 PORT_HTTPS_NAME="port-443"
+PORT_PRIVATE_HTTP_NAME="port-8080"
+PRIVATE_HTTP_PORT=8080"
 
 PUBLIC_FRONTEND_IP="public-frontend-ip"
 PRIVATE_FRONTEND_IP="private-frontend-ip"
@@ -988,20 +991,26 @@ resource appGateway 'Microsoft.Network/applicationGateways@2024-07-01' = {
       }
     ]
 
-    frontendPorts: [
-      {
-        name: 'port-80'
-        properties: {
-          port: 80
-        }
-      }
-      {
-        name: 'port-443'
-        properties: {
-          port: 443
-        }
-      }
-    ]
+frontendPorts: [
+  {
+    name: 'port-80'
+    properties: {
+      port: 80
+    }
+  }
+  {
+    name: 'port-443'
+    properties: {
+      port: 443
+    }
+  }
+  {
+    name: 'port-8080'
+    properties: {
+      port: 8080
+    }
+  }
+]
 
     sslCertificates: [
       {
@@ -1159,7 +1168,7 @@ resource appGateway 'Microsoft.Network/applicationGateways@2024-07-01' = {
             id: resourceId(
               'Microsoft.Network/applicationGateways/frontendPorts',
               applicationGatewayName,
-              'port-80'
+              'port-8080'
             )
           }
         }
@@ -1506,6 +1515,8 @@ rule-public-path   → priorité 100
 rule-redirect-http → priorité 200
 rule-private-path  → priorité 300
 ```
+
+
 
 
 
