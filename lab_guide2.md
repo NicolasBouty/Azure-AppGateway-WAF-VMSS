@@ -1384,7 +1384,8 @@ ls -lh deploy-appgw.json
 ```Bash
 -rw-r--r-- 1 nicolas nicolas 15K Sep 11 10:31 deploy-appgw.json
 ```
-<img width="546" height="256" alt="Capture d&#39;écran 2026-07-29 115425" src="https://github.com/user-attachments/assets/6a746d93-466e-40e1-9df5-f3628fac340d" />
+<img width="476" height="432" alt="Capture d&#39;écran 2026-09-11 132240" src="https://github.com/user-attachments/assets/3d308c26-867d-41de-92ed-2167ab4f9eae" />
+
 
 ## 6. Vérifier les objets déclarés
 ```Bash
