@@ -3267,11 +3267,32 @@ OK-API-HEALTHY
 
 ### depuis la jumpboxe en serial  ECHEC
 ```Bash
-azureuser@vm-jumpbox:~$ curl -I "http://10.0.1.10:8080/"
-^C ECHEC
-azureuser@vm-jumpbox:~$ curl -I "http://10.0.1.10:8080/api/health"
-^C ECHEC
+azureuser@vm-jumpbox:~$ curl --connect-timeout 5 --max-time 10 -i \
+  "http://10.0.1.10:8080/"
+HTTP/1.1 200 OK
+Date: Mon, 14 Sep 2026 12:39:01 GMT
+Content-Type: text/html
+Content-Length: 7
+Connection: keep-alive
+Server: SimpleHTTP/0.6 Python/3.12.3
+Last-Modified: Mon, 14 Sep 2026 09:33:17 GMT
+
+OK-WEB
+azureuser@vm-jumpbox:~$ curl --connect-timeout 5 --max-time 10 -i \
+  "http://10.0.1.10:8080/api/health"
+HTTP/1.1 200 OK
+Date: Mon, 14 Sep 2026 12:39:20 GMT
+Content-Type: application/octet-stream
+Content-Length: 15
+Connection: keep-alive
+Server: SimpleHTTP/0.6 Python/3.12.3
+Last-Modified: Mon, 14 Sep 2026 09:32:56 GMT
+
+OK-API-HEALTHY
+azureuser@vm-jumpbox:~$ 
 ```
+<img width="760" height="491" alt="Capture d&#39;écran 2026-09-14 144042" src="https://github.com/user-attachments/assets/e5d732e9-8c35-4bde-bad2-e30ce5697baa" />
+
 
 ## 3. Santé des backends
 ```Bash
