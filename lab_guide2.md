@@ -2345,7 +2345,7 @@ az vmss show \
 /subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendAddressPools/pool-web
 /subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendAddressPools/pool-api
 ```
-###
+### show-backend-health
 ```Bash
 az network application-gateway show-backend-health \
   --resource-group "$RG_WORKLOAD" \
@@ -2404,19 +2404,74 @@ pip-appgw  137.117.139.94  Standard  /subscriptions/088cb8d6-6945-4934-a2cb-cad1
 ## 8. Créer la Jumpbox privée
 La Jumpbox est créée dans subnet-mgmt sans IP publique.
 ```Bash
-read -rsp "Mot de passe local de la Jumpbox : " JUMPBOX_PASSWORD
+read -rsp "Mot de passe local de la Jumpbox Ubuntu : " JUMPBOX_PASSWORD
 echo
 
-if [ -z "$JUMPBOX_PASSWORD" ]; then
-  echo "Erreur : mot de passe vide."
+if [ -z "${JUMPBOX_PASSWORD:-}" ]; then
+  echo "Erreur : mot de passe Jumpbox vide."
   exit 1
 fi
+
+if [ -z "${SUBNET_MGMT_ID:-}" ]; then
+  echo "Erreur : SUBNET_MGMT_ID est vide."
+  exit 1
+fi
+
+if [ -z "${RG_WORKLOAD:-}" ] || [ -z "${JUMPBOX_NAME:-}" ] || [ -z "${LOCATION:-}" ]; then
+  echo "Erreur : une variable obligatoire est vide."
+  exit 1
+fi
+
+IMAGE_UBUNTU="Canonical:ubuntu-24_04-lts:server:latest"
+SKU_JUMPBOX="Standard_D2als_v7"
+
+echo "Image sélectionnée : $IMAGE_UBUNTU"
+echo "Taille sélectionnée : $SKU_JUMPBOX"
+echo "Subnet cible        : $SUBNET_MGMT_ID"
 
 az vm create \
   --resource-group "$RG_WORKLOAD" \
   --name "$JUMPBOX_NAME" \
   --location "$LOCATION" \
-  --image "${IMAGE_PUBLISHER}:${IMAGE_OFFER}:${IMAGE_SKU}:${IMAGE_VERSION}" \
+  --image "$IMAGE_UBUNTU" \
+  --size "$SKU_JUMPBOX" \
+  --admin-username "$ADMIN_USER" \
+  --admin-password "$JUMPBOX_PASSWORD" \
+  --authentication-type password \
+  --subnet "$SUBNET_MGMT_ID" \
+  --public-ip-address "" \
+  --nsg ""
+
+unset JUMPBOX_PASSWORDread -rsp "Mot de passe local de la Jumpbox Ubuntu : " JUMPBOX_PASSWORD
+echo
+
+if [ -z "${JUMPBOX_PASSWORD:-}" ]; then
+  echo "Erreur : mot de passe Jumpbox vide."
+  exit 1
+fi
+
+if [ -z "${SUBNET_MGMT_ID:-}" ]; then
+  echo "Erreur : SUBNET_MGMT_ID est vide."
+  exit 1
+fi
+
+if [ -z "${RG_WORKLOAD:-}" ] || [ -z "${JUMPBOX_NAME:-}" ] || [ -z "${LOCATION:-}" ]; then
+  echo "Erreur : une variable obligatoire est vide."
+  exit 1
+fi
+
+IMAGE_UBUNTU="Canonical:ubuntu-24_04-lts:server:latest"
+SKU_JUMPBOX="Standard_D2als_v7"
+
+echo "Image sélectionnée : $IMAGE_UBUNTU"
+echo "Taille sélectionnée : $SKU_JUMPBOX"
+echo "Subnet cible        : $SUBNET_MGMT_ID"
+
+az vm create \
+  --resource-group "$RG_WORKLOAD" \
+  --name "$JUMPBOX_NAME" \
+  --location "$LOCATION" \
+  --image "$IMAGE_UBUNTU" \
   --size "$SKU_JUMPBOX" \
   --admin-username "$ADMIN_USER" \
   --admin-password "$JUMPBOX_PASSWORD" \
