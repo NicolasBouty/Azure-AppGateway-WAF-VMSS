@@ -3150,9 +3150,9 @@ done
 ```
 
 ## 9. Créer les règles de routage finales
-rule-public-path     → 200  
-rule-redirect-http   → 300  
-rule-private-path    → 400  
+rule-public-path     → 100  
+rule-redirect-http   → 200  
+rule-private-path    → 300  
 ```Bash
 az network application-gateway rule list \
   --resource-group "$RG_WORKLOAD" \
