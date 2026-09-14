@@ -3261,12 +3261,12 @@ nicolas [ ~ ]$ curl -k -L "http://XX.XX.XX.XX/api/health"
 OK-API-HEALTHY
 ```
 <img width="603" height="50" alt="Capture d&#39;écran 2026-09-14 135221" src="https://github.com/user-attachments/assets/22908737-8149-42e0-892d-bd8a5bf7eb7e" />
-### depuis la jumpboxe en serial 
+### depuis la jumpboxe en serial  ECHEC
 ```Bash
 azureuser@vm-jumpbox:~$ curl -I "http://10.0.1.10:8080/"
-^C
+^C ECHEC
 azureuser@vm-jumpbox:~$ curl -I "http://10.0.1.10:8080/api/health"
-^C
+^C ECHEC
 ```
 
 ## 3. Santé des backends
@@ -3337,7 +3337,7 @@ az network application-gateway show-backend-health \
 
 
 # Phase 8. Tests fonctionnels
-## 11. Tests fonctionnels
+## 1. Tests fonctionnels
 ### Récupérer l’IP publique
 ```Bash
 PUBLIC_IP=$(az network public-ip show \
@@ -3348,7 +3348,7 @@ PUBLIC_IP=$(az network public-ip show \
 
 echo "$PUBLIC_IP"
 ```
-### 11.1 Depuis un PC local en PowerShell
+### Depuis un PC local en PowerShell
 ```Bash
 curl.exe -k -I "http://<IP_PUBLIQUE>/"
 ```
