@@ -3149,7 +3149,7 @@ done
 }
 ```
 
-## 9. Créer les règles de routage finales
+## 9. Créer les règles de routage
 rule-public-path     → 100  
 rule-redirect-http   → 200  
 rule-private-path    → 300  
@@ -3227,6 +3227,7 @@ rule-public-path    100         PathBasedRouting  /subscriptions/088cb8d6-6945-4
 rule-redirect-http  200         Basic             /subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/httpListeners/listener-public-http                                                                                                                                                                          Succeeded  /subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/redirectConfigurations/redirect-http-to-https
 rule-private-path   300         PathBasedRouting  /subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/httpListeners/listener-private-http  /subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/urlPathMaps/map-private  Succeeded
 ```
+
 ## 2. Tests de requêtes HTTP / HTTPS
 ```Bash
 nicolas [ ~ ]$ curl -I http://XX.XX.XX.XX/
@@ -3260,32 +3261,15 @@ nicolas [ ~ ]$ curl -k -L "http://XX.XX.XX.XX/api/health"
 OK-API-HEALTHY
 ```
 <img width="603" height="50" alt="Capture d&#39;écran 2026-09-14 135221" src="https://github.com/user-attachments/assets/22908737-8149-42e0-892d-bd8a5bf7eb7e" />
-
-# ✅ Phase 7 — Vérification
-## Règles finales
+### depuis la jumpboxe en serial 
 ```Bash
-az network application-gateway rule list \
-  --resource-group "$RG_WORKLOAD" \
-  --gateway-name "$APPGW_NAME" \
-  --query "[].{
-    Name:name,
-    Priority:priority,
-    Type:ruleType,
-    ListenerId:httpListener.id,
-    PathMapId:urlPathMap.id,
-    RedirectId:redirectConfiguration.id,
-    State:provisioningState
-  }" \
-  --output table
+azureuser@vm-jumpbox:~$ curl -I "http://10.0.1.10:8080/"
+^C
+azureuser@vm-jumpbox:~$ curl -I "http://10.0.1.10:8080/api/health"
+^C
 ```
-### Résultat
 
-| Règle | Priorité | Type | Listener | Cible |
-|---|---:|---|---|---|
-| `rule-public-path` | 200 | PathBasedRouting | `appGatewayHttpListener` | `map-public` |
-| `rule-redirect-http` | 300 | Basic | `listener-public-http` | `redirect-http-to-https` |
-| `rule-private-path` | 400 | PathBasedRouting | `listener-private-http` | `map-private` |
-## Santé des backends
+## 3. Santé des backends
 ```Bash
 az network application-gateway show-backend-health \
   --resource-group "$RG_WORKLOAD" \
@@ -3293,13 +3277,61 @@ az network application-gateway show-backend-health \
   --output jsonc
 ```
 ### Résultat
-```text
-pool-web
-  → Healthy
-
-pool-api
-  → Healthy
-```
+```Bash
+{
+  "backendAddressPools": [
+    {
+      "backendAddressPool": {
+        "id": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendAddressPools/pool-api",
+        "resourceGroup": "grp_tpaz104-lab2"
+      },
+      "backendHttpSettingsCollection": [
+        {
+          "backendHttpSettings": {
+            "id": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendHttpSettingsCollection/http-setting-api",
+            "resourceGroup": "grp_tpaz104-lab2"
+          },
+          "servers": [
+            {
+              "address": "10.0.3.4",
+              "health": "Healthy",
+              "healthProbeLog": "Success. Received 200 status code",
+              "ipConfiguration": {
+                "id": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Compute/virtualMachineScaleSets/vmss-api/virtualMachines/0/networkInterfaces/nic-api/ipConfigurations/ipconfig-api",
+                "resourceGroup": "grp_tpaz104-lab2"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "backendAddressPool": {
+        "id": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendAddressPools/pool-web",
+        "resourceGroup": "grp_tpaz104-lab2"
+      },
+      "backendHttpSettingsCollection": [
+        {
+          "backendHttpSettings": {
+            "id": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendHttpSettingsCollection/http-setting-web",
+            "resourceGroup": "grp_tpaz104-lab2"
+          },
+          "servers": [
+            {
+              "address": "10.0.2.4",
+              "health": "Healthy",
+              "healthProbeLog": "Success. Received 200 status code",
+              "ipConfiguration": {
+                "id": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Compute/virtualMachineScaleSets/vmss-web/virtualMachines/0/networkInterfaces/nic-web/ipConfigurations/ipconfig-web",
+                "resourceGroup": "grp_tpaz104-lab2"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
 ---
 
 
