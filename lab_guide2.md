@@ -2731,9 +2731,9 @@ RULE_PUBLIC_PATH="rule-public-path"
 RULE_REDIRECT_HTTP="rule-redirect-http"
 RULE_PRIVATE_PATH="rule-private-path"
 
-RULE_PUBLIC_PATH_PRIORITY=200
-RULE_REDIRECT_HTTP_PRIORITY=300
-RULE_PRIVATE_PATH_PRIORITY=400
+RULE_PUBLIC_PATH_PRIORITY=10
+RULE_REDIRECT_HTTP_PRIORITY=200
+RULE_PRIVATE_PATH_PRIORITY=300
 ```
 Les noms appGatewayFrontendPort et appGatewayFrontendIP sont généralement créés automatiquement par az network application-gateway create.  
 ### Vérifier les noms avant de continuer.  
@@ -3150,21 +3150,34 @@ done
 ```
 
 ## 9. Créer les règles de routage finales
-
 rule-public-path     → 200  
 rule-redirect-http   → 300  
 rule-private-path    → 400  
-
-### HTTPS public : routage basé sur le chemin
 ```Bash
-az network application-gateway rule create \
+az network application-gateway rule list \
   --resource-group "$RG_WORKLOAD" \
   --gateway-name "$APPGW_NAME" \
-  --name "$RULE_PUBLIC_PATH" \
-  --rule-type PathBasedRouting \
+  --query "[].{Name:name, Priority:priority, Type:ruleType}" \
+  --output table
+```
+### Résultat
+```Bash
+Name                Priority    Type
+------------------  ----------  ----------------
+rule-public-path    100         PathBasedRouting
+rule-redirect-http  200         Basic
+rule-private-path   300         PathBasedRouting
+```
+### HTTPS public : routage basé sur le chemin
+```Bash
+az network application-gateway rule update \
+  --resource-group "$RG_WORKLOAD" \
+  --gateway-name "$APPGW_NAME" \
+  --name "rule-public-path" \
   --http-listener "$PUBLIC_HTTPS_LISTENER" \
   --url-path-map "$MAP_PUBLIC" \
-  --priority "$RULE_PUBLIC_PATH_PRIORITY"
+  --address-pool "pool-web" \
+  --http-settings "http-setting-web"
 ```
 ### HTTP public : redirection permanente vers HTTPS
 ```Bash
@@ -3179,14 +3192,14 @@ az network application-gateway rule create \
 ```
 ### HTTP privé : routage basé sur le chemin
 ```Bash
-az network application-gateway rule create \
+az network application-gateway rule update \
   --resource-group "$RG_WORKLOAD" \
   --gateway-name "$APPGW_NAME" \
-  --name "$RULE_PRIVATE_PATH" \
-  --rule-type PathBasedRouting \
+  --name "rule-private-path" \
   --http-listener "$PRIVATE_HTTP_LISTENER" \
   --url-path-map "$MAP_PRIVATE" \
-  --priority "$RULE_PRIVATE_PATH_PRIORITY"
+  --address-pool "pool-web" \
+  --http-settings "http-setting-web"
 ```
 
 ## 10. Vérifier les règles avant suppression
