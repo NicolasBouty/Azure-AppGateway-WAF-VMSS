@@ -3240,6 +3240,7 @@ Connection: keep-alive
 Location: https://XX.XX.XX.XX/
 ```
 <img width="475" height="188" alt="Capture d&#39;écran 2026-09-14 134314" src="https://github.com/user-attachments/assets/fcf587d6-a404-49a6-81bb-2226b6f621e9" />
+
 ```Bash
 nicolas [ ~ ]$ curl -k -I "https://XX.XX.XX.XX/api/health"
 HTTP/1.1 200 OK
@@ -3263,6 +3264,7 @@ nicolas [ ~ ]$ curl -k -L "http://XX.XX.XX.XX/api/health"
 OK-API-HEALTHY
 ```
 <img width="603" height="50" alt="Capture d&#39;écran 2026-09-14 135221" src="https://github.com/user-attachments/assets/22908737-8149-42e0-892d-bd8a5bf7eb7e" />
+
 ### depuis la jumpboxe en serial  ECHEC
 ```Bash
 azureuser@vm-jumpbox:~$ curl -I "http://10.0.1.10:8080/"
