@@ -1384,7 +1384,9 @@ wc -l "$APPGW_BICEP_FILE"
 az bicep build \
   --file "$APPGW_BICEP_FILE"
 ```
- warning dans le Bicep pour publicIp et wafPolicy
+```Bash
+The configuration value of bicep.use_binary_from_path has been set to 'false'.
+```
 ### vérification
 ```Bash
 ls -lh deploy-appgw.json
@@ -1578,6 +1580,32 @@ az network public-ip show \
 }
 ```
 ## 3. vérification des Frontends, ports et listeners
+```Bash
+az network application-gateway show \
+  --resource-group "$RG_WORKLOAD" \
+  --name "$APPGW_NAME" \
+  --query "{
+    Frontends:frontendIPConfigurations[].{
+      Name:name,
+      PublicIP:publicIPAddress.id,
+      PrivateIP:privateIPAddress,
+      Allocation:privateIPAllocationMethod
+    },
+    Ports:frontendPorts[].{
+      Name:name,
+      Port:port
+    },
+    Listeners:httpListeners[].{
+      Name:name,
+      Protocol:protocol,
+      FrontendIPId:frontendIPConfiguration.id,
+      FrontendPortId:frontendPort.id,
+      CertificateId:sslCertificate.id
+    }
+  }" \
+  --output jsonc
+```
+### résultat
 ```Bash
 {
   "Frontends": [
@@ -2137,7 +2165,7 @@ ls -lh deploy-vmss.json
 ```Bash
 -rw-r--r-- 1 nicolas nicolas 6.8K Sep 11 14:07 deploy-vmss.json
 ```
-### Contrôles de sécurité :
+### Contrôles de l'absence de  Load Balancer et d'IP public :
 ```Bash
 if grep -Eqi \
   'Microsoft\.Network/loadBalancers|Microsoft\.Network/publicIPAddresses|publicIPAddressConfiguration|loadBalancerBackendAddressPools' \
