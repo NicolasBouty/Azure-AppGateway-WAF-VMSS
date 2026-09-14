@@ -499,7 +499,7 @@ az network nsg rule create \
   --source-address-prefix "$MGMT_SUBNET" \
   --source-port-range '*' \
   --destination-address-prefix "$APPGW_PRIVATE_IP" \
-  --destination-port-range 80
+  --destination-port-range 8080
 
 az network nsg rule create \
   --resource-group "$RG_NETWORK" \
@@ -528,7 +528,7 @@ Name                                 Priority    Direction    Access    Source  
 -----------------------------------  ----------  -----------  --------  -----------  -----------------------  ----------
 Deny-All-Inbound                     4096        Inbound      Deny      *            *                        *
 Allow-SSH-To-Backends                100         Outbound     Allow     10.0.4.0/24  10.0.2.0/24,10.0.3.0/24  22
-Allow-HTTP-To-AppGW-PrivateFrontend  110         Outbound     Allow     10.0.4.0/24  10.0.1.10                80
+Allow-HTTP-To-AppGW-PrivateFrontend  110         Outbound     Allow     10.0.4.0/24  10.0.1.10                8080
 Deny-All-Outbound                    4096        Outbound     Deny      *            *                        *
 ```
 ---
