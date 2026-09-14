@@ -3336,9 +3336,8 @@ az network application-gateway show-backend-health \
     }
   ]
 }
+```
 ---
-
-
 
 # Phase 8. Tests fonctionnels
 ## 1. Tests fonctionnels
