@@ -2534,27 +2534,26 @@ az network nic show \
 ## 9. Configurer Autoscale XXX plante
 Configure une capacité minimale de 1, maximale de 2 et par défaut de 1.  
 Les règles CPU sont uniqument une démonstration de configuration.  
+### variable
+```Bash
+AUTOSCALE_WEB_NAME="autoscale-vmss-web"
+AUTOSCALE_API_NAME="autoscale-vmss-api"
+```
+# 2. Récupération dynamique des Resource IDs
+```Bash
+VMSS_WEB_ID=$(az vmss show --resource-group "$RG_WORKLOAD" --name "$VMSS_WEB_NAME" --query id --output tsv)
+VMSS_API_ID=$(az vmss show --resource-group "$RG_WORKLOAD" --name "$VMSS_API_NAME" --query id --output tsv)
+```
+### autoscale WEB
 ```Bash
 az monitor autoscale create \
   --resource-group "$RG_WORKLOAD" \
-  --resource "$VMSS_WEB_NAME" \
-  --resource-type Microsoft.Compute/virtualMachineScaleSets \
+  --resource "$VMSS_WEB_ID" \
   --name "$AUTOSCALE_WEB_NAME" \
   --min-count 1 \
   --max-count 2 \
   --count 1
 
-az monitor autoscale create \
-  --resource-group "$RG_WORKLOAD" \
-  --resource "$VMSS_API_NAME" \
-  --resource-type Microsoft.Compute/virtualMachineScaleSets \
-  --name "$AUTOSCALE_API_NAME" \
-  --min-count 1 \
-  --max-count 2 \
-  --count 1
-```
-###  Règles CPU
-```Bash
 az monitor autoscale rule create \
   --resource-group "$RG_WORKLOAD" \
   --autoscale-name "$AUTOSCALE_WEB_NAME" \
@@ -2568,6 +2567,16 @@ az monitor autoscale rule create \
   --condition "Percentage CPU < 30 avg 10m" \
   --scale in 1 \
   --cooldown 10
+```
+### autoscale API
+```Bash
+az monitor autoscale create \
+  --resource-group "$RG_WORKLOAD" \
+  --resource "$VMSS_API_ID" \
+  --name "$AUTOSCALE_API_NAME" \
+  --min-count 1 \
+  --max-count 2 \
+  --count 1
 
 az monitor autoscale rule create \
   --resource-group "$RG_WORKLOAD" \
@@ -2587,31 +2596,28 @@ az monitor autoscale rule create \
 ```Bash
 for AUTOSCALE_NAME in "$AUTOSCALE_WEB_NAME" "$AUTOSCALE_API_NAME"; do
   echo "=== $AUTOSCALE_NAME ==="
-
   az monitor autoscale show \
     --resource-group "$RG_WORKLOAD" \
     --name "$AUTOSCALE_NAME" \
-    --query "{
-      Name:name,
-      Enabled:enabled,
-      TargetResource:targetResourceUri,
-      DefaultCapacity:profiles[0].capacity.default,
-      MinimumCapacity:profiles[0].capacity.minimum,
-      MaximumCapacity:profiles[0].capacity.maximum,
-      RuleCount:length(profiles[0].rules)
-    }" \
+    --query "{Name:name, Enabled:enabled, RuleCount:length(profiles[0].rules)}" \
     --output jsonc
 done
 ```
 ### résultat
 ```Bash
+=== autoscale-vmss-web ===
 {
-  "DefaultCapacity": "1",
   "Enabled": true,
-  "MaximumCapacity": "2",
-  "MinimumCapacity": "1",
+  "Name": "autoscale-vmss-web",
   "RuleCount": 2
 }
+=== autoscale-vmss-api ===
+{
+  "Enabled": true,
+  "Name": "autoscale-vmss-api",
+  "RuleCount": 2
+}
+nicolas [ ~ ]$ 
 ```
 ## 10. Vérifier la santé Application Gateway
 ```Bash
@@ -2622,13 +2628,60 @@ az network application-gateway show-backend-health \
 ```
 ### résultat
 ```Bash
-pool-web
-  → une ou plusieurs IP privées d’instances VMSS Web
-  → Health: Healthy
-
-pool-api
-  → une ou plusieurs IP privées d’instances VMSS API
-  → Health: Healthy
+{
+  "backendAddressPools": [
+    {
+      "backendAddressPool": {
+        "id": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendAddressPools/pool-api",
+        "resourceGroup": "grp_tpaz104-lab2"
+      },
+      "backendHttpSettingsCollection": [
+        {
+          "backendHttpSettings": {
+            "id": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendHttpSettingsCollection/http-setting-api",
+            "resourceGroup": "grp_tpaz104-lab2"
+          },
+          "servers": [
+            {
+              "address": "10.0.3.4",
+              "health": "Healthy",
+              "healthProbeLog": "Success. Received 200 status code",
+              "ipConfiguration": {
+                "id": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Compute/virtualMachineScaleSets/vmss-api/virtualMachines/0/networkInterfaces/nic-api/ipConfigurations/ipconfig-api",
+                "resourceGroup": "grp_tpaz104-lab2"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "backendAddressPool": {
+        "id": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendAddressPools/pool-web",
+        "resourceGroup": "grp_tpaz104-lab2"
+      },
+      "backendHttpSettingsCollection": [
+        {
+          "backendHttpSettings": {
+            "id": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendHttpSettingsCollection/http-setting-web",
+            "resourceGroup": "grp_tpaz104-lab2"
+          },
+          "servers": [
+            {
+              "address": "10.0.2.4",
+              "health": "Healthy",
+              "healthProbeLog": "Success. Received 200 status code",
+              "ipConfiguration": {
+                "id": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Compute/virtualMachineScaleSets/vmss-web/virtualMachines/0/networkInterfaces/nic-web/ipConfigurations/ipconfig-web",
+                "resourceGroup": "grp_tpaz104-lab2"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
 ```
 
 
