@@ -3202,7 +3202,8 @@ az network application-gateway rule update \
   --http-settings "http-setting-web"
 ```
 
-## 10. Vérifier les règles avant suppression
+# ✅ Phase 7 — Vérification
+## 1. Règles finales
 ```Bash
 az network application-gateway rule list \
   --resource-group "$RG_WORKLOAD" \
@@ -3219,39 +3220,46 @@ az network application-gateway rule list \
   --output table
 ```
 ### Résultat
-
-| Règle | Priorité | Type | Listener | Path map / Redirection |
-|---|---:|---|---|---|
-| `rule1` | 100 | Basic | `appGatewayHttpListener` | Bootstrap |
-| `rule-public-path` | 200 | PathBasedRouting | `appGatewayHttpListener` | `map-public` |
-| `rule-redirect-http` | 300 | Basic | `listener-public-http` | `redirect-http-to-https` |
-| `rule-private-path` | 400 | PathBasedRouting | `listener-private-http` | `map-private` |
-
-## 11. Supprimer les objets bootstrap
-Exécute cette étape seulement lorsque les trois nouvelles règles existent avec l’état `Succeeded`
-### Supprimer la règle bootstrap
 ```Bash
-az network application-gateway rule delete \
-  --resource-group "$RG_WORKLOAD" \
-  --gateway-name "$APPGW_NAME" \
-  --name "$BOOTSTRAP_RULE"
+Name                Priority    Type              ListenerId                                                                                                                                                                         PathMapId                                                                                                                                                              State      RedirectId
+------------------  ----------  ----------------  ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  ---------------------------------------------------------------------------------------------------------------------------------------------------------------------  ---------  -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+rule-public-path    100         PathBasedRouting  /subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/httpListeners/listener-public-https  /subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/urlPathMaps/map-public   Succeeded
+rule-redirect-http  200         Basic             /subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/httpListeners/listener-public-http                                                                                                                                                                          Succeeded  /subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/redirectConfigurations/redirect-http-to-https
+rule-private-path   300         PathBasedRouting  /subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/httpListeners/listener-private-http  /subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/urlPathMaps/map-private  Succeeded
 ```
-### Supprimer le HTTP setting bootstrap
+## 2. Tests de requêtes HTTP / HTTPS
 ```Bash
-az network application-gateway http-settings delete \
-  --resource-group "$RG_WORKLOAD" \
-  --gateway-name "$APPGW_NAME" \
-  --name "$BOOTSTRAP_HTTP_SETTING"
+nicolas [ ~ ]$ curl -I http://XX.XX.XX.XX/
+HTTP/1.1 301 Moved Permanently
+Server: Microsoft-Azure-Application-Gateway/v2
+Date: Mon, 14 Sep 2026 11:37:17 GMT
+Content-Type: text/html
+Content-Length: 195
+Connection: keep-alive
+Location: https://XX.XX.XX.XX/
 ```
-### Supprimer le backend pool bootstrap
+<img width="475" height="188" alt="Capture d&#39;écran 2026-09-14 134314" src="https://github.com/user-attachments/assets/fcf587d6-a404-49a6-81bb-2226b6f621e9" />
 ```Bash
-az network application-gateway address-pool delete \
-  --resource-group "$RG_WORKLOAD" \
-  --gateway-name "$APPGW_NAME" \
-  --name "$BOOTSTRAP_POOL"
+nicolas [ ~ ]$ curl -k -I "https://XX.XX.XX.XX/api/health"
+HTTP/1.1 200 OK
+Date: Mon, 14 Sep 2026 11:37:51 GMT
+Content-Type: application/octet-stream
+Content-Length: 15
+Connection: keep-alive
+Server: SimpleHTTP/0.6 Python/3.12.3
+Last-Modified: Mon, 14 Sep 2026 09:32:56 GMT
 ```
-
-> Ne supprime pas `appGatewayHttpListener`. Ce listener HTTPS public est réutilisé par `rule-public-path`.
+<img width="616" height="191" alt="Capture d&#39;écran 2026-09-14 134503" src="https://github.com/user-attachments/assets/5111bdc2-b0c4-430e-a96e-553a22562e1f" />
+```Bash
+nicolas [ ~ ]$ curl -k -L "http://XX.XX.XX.XX/"
+OK-WEB
+```
+<img width="505" height="47" alt="Capture d&#39;écran 2026-09-14 135128" src="https://github.com/user-attachments/assets/965cd8f2-f96c-45af-99f0-d7bb5ed0a3b1" />
+```Bash
+nicolas [ ~ ]$ curl -k -L "http://XX.XX.XX.XX/api/health"
+OK-API-HEALTHY
+```
+<img width="603" height="50" alt="Capture d&#39;écran 2026-09-14 135221" src="https://github.com/user-attachments/assets/22908737-8149-42e0-892d-bd8a5bf7eb7e" />
 
 # ✅ Phase 7 — Vérification
 ## Règles finales
