@@ -3251,11 +3251,13 @@ Server: SimpleHTTP/0.6 Python/3.12.3
 Last-Modified: Mon, 14 Sep 2026 09:32:56 GMT
 ```
 <img width="616" height="191" alt="Capture d&#39;écran 2026-09-14 134503" src="https://github.com/user-attachments/assets/5111bdc2-b0c4-430e-a96e-553a22562e1f" />
+
 ```Bash
 nicolas [ ~ ]$ curl -k -L "http://XX.XX.XX.XX/"
 OK-WEB
 ```
 <img width="505" height="47" alt="Capture d&#39;écran 2026-09-14 135128" src="https://github.com/user-attachments/assets/965cd8f2-f96c-45af-99f0-d7bb5ed0a3b1" />
+
 ```Bash
 nicolas [ ~ ]$ curl -k -L "http://XX.XX.XX.XX/api/health"
 OK-API-HEALTHY
