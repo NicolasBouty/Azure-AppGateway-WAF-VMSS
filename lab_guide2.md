@@ -1376,7 +1376,7 @@ wc -l "$APPGW_BICEP_FILE"
 ### résultat
 ```Bash
 -rw-r--r-- 1 nicolas nicolas 12K Sep 11 10:17 deploy-appgw.bicep
-477 deploy-appgw.bicep
+479 deploy-appgw.bicep
 ```
 
 ## 5. Compiler le Bicep
