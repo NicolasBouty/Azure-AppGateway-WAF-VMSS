@@ -3228,7 +3228,72 @@ rule-redirect-http  200         Basic             /subscriptions/088cb8d6-6945-4
 rule-private-path   300         PathBasedRouting  /subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/httpListeners/listener-private-http  /subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/urlPathMaps/map-private  Succeeded
 ```
 
-## 2. Tests de requêtes HTTP / HTTPS
+## 2. Santé des backends
+```Bash
+az network application-gateway show-backend-health \
+  --resource-group "$RG_WORKLOAD" \
+  --name "$APPGW_NAME" \
+  --output jsonc
+```
+### Résultat
+```Bash
+{
+  "backendAddressPools": [
+    {
+      "backendAddressPool": {
+        "id": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendAddressPools/pool-api",
+        "resourceGroup": "grp_tpaz104-lab2"
+      },
+      "backendHttpSettingsCollection": [
+        {
+          "backendHttpSettings": {
+            "id": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendHttpSettingsCollection/http-setting-api",
+            "resourceGroup": "grp_tpaz104-lab2"
+          },
+          "servers": [
+            {
+              "address": "10.0.3.4",
+              "health": "Healthy",
+              "healthProbeLog": "Success. Received 200 status code",
+              "ipConfiguration": {
+                "id": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Compute/virtualMachineScaleSets/vmss-api/virtualMachines/0/networkInterfaces/nic-api/ipConfigurations/ipconfig-api",
+                "resourceGroup": "grp_tpaz104-lab2"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "backendAddressPool": {
+        "id": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendAddressPools/pool-web",
+        "resourceGroup": "grp_tpaz104-lab2"
+      },
+      "backendHttpSettingsCollection": [
+        {
+          "backendHttpSettings": {
+            "id": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendHttpSettingsCollection/http-setting-web",
+            "resourceGroup": "grp_tpaz104-lab2"
+          },
+          "servers": [
+            {
+              "address": "10.0.2.4",
+              "health": "Healthy",
+              "healthProbeLog": "Success. Received 200 status code",
+              "ipConfiguration": {
+                "id": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Compute/virtualMachineScaleSets/vmss-web/virtualMachines/0/networkInterfaces/nic-web/ipConfigurations/ipconfig-web",
+                "resourceGroup": "grp_tpaz104-lab2"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
+
+## 3. Tests de requêtes HTTP / HTTPS
 ```Bash
 nicolas [ ~ ]$ curl -I http://XX.XX.XX.XX/
 HTTP/1.1 301 Moved Permanently
@@ -3293,71 +3358,16 @@ azureuser@vm-jumpbox:~$
 ```
 <img width="760" height="491" alt="Capture d&#39;écran 2026-09-14 144042" src="https://github.com/user-attachments/assets/e5d732e9-8c35-4bde-bad2-e30ce5697baa" />
 
+### depuis un PC local
+```Bash
+curl.exe -k -L "http://20.234.223.84/"
+```
+```Bash
+curl.exe -k -L "http://20.234.223.84/api/health"
+```
+### résultat
+<img width="583" height="79" alt="Capture d&#39;écran 2026-09-14 145344" src="https://github.com/user-attachments/assets/80f9965d-7b67-49e6-9270-311d6cadae7c" />
 
-## 3. Santé des backends
-```Bash
-az network application-gateway show-backend-health \
-  --resource-group "$RG_WORKLOAD" \
-  --name "$APPGW_NAME" \
-  --output jsonc
-```
-### Résultat
-```Bash
-{
-  "backendAddressPools": [
-    {
-      "backendAddressPool": {
-        "id": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendAddressPools/pool-api",
-        "resourceGroup": "grp_tpaz104-lab2"
-      },
-      "backendHttpSettingsCollection": [
-        {
-          "backendHttpSettings": {
-            "id": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendHttpSettingsCollection/http-setting-api",
-            "resourceGroup": "grp_tpaz104-lab2"
-          },
-          "servers": [
-            {
-              "address": "10.0.3.4",
-              "health": "Healthy",
-              "healthProbeLog": "Success. Received 200 status code",
-              "ipConfiguration": {
-                "id": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Compute/virtualMachineScaleSets/vmss-api/virtualMachines/0/networkInterfaces/nic-api/ipConfigurations/ipconfig-api",
-                "resourceGroup": "grp_tpaz104-lab2"
-              }
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "backendAddressPool": {
-        "id": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendAddressPools/pool-web",
-        "resourceGroup": "grp_tpaz104-lab2"
-      },
-      "backendHttpSettingsCollection": [
-        {
-          "backendHttpSettings": {
-            "id": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendHttpSettingsCollection/http-setting-web",
-            "resourceGroup": "grp_tpaz104-lab2"
-          },
-          "servers": [
-            {
-              "address": "10.0.2.4",
-              "health": "Healthy",
-              "healthProbeLog": "Success. Received 200 status code",
-              "ipConfiguration": {
-                "id": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Compute/virtualMachineScaleSets/vmss-web/virtualMachines/0/networkInterfaces/nic-web/ipConfigurations/ipconfig-web",
-                "resourceGroup": "grp_tpaz104-lab2"
-              }
-            }
-          ]
-        }
-      ]
-    }
-  ]
-}
-```
 ---
 
 # Phase 8. Tests fonctionnels
