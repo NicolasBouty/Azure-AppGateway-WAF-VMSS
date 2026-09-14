@@ -3368,6 +3368,137 @@ curl.exe -k -L "http://20.234.223.84/api/health"
 ### résultat
 <img width="583" height="79" alt="Capture d&#39;écran 2026-09-14 145344" src="https://github.com/user-attachments/assets/80f9965d-7b67-49e6-9270-311d6cadae7c" />
 
+
+## 4. connexion ssh vers les VM des VMSS depuis la Jumpboxe
+### VMSS WEB
+```Bash
+azureuser@vm-jumpbox:~$ ssh azureuser@10.0.2.4
+The authenticity of host '10.0.2.4 (10.0.2.4)' can't be established.
+ED25519 key fingerprint is SHA256:nO988ZRBQLXy+PSQMbfOPYt16pszxTyOeqh9IJiPrvg.
+This key is not known by any other names.
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+Warning: Permanently added '10.0.2.4' (ED25519) to the list of known hosts.
+azureuser@10.0.2.4's password: 
+Welcome to Ubuntu 24.04.4 LTS (GNU/Linux 6.17.0-1022-azure x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/pro
+
+ System information as of Mon Sep 14 13:01:45 UTC 2026
+
+  System load:  0.02              Temperature:           49.9 C
+  Usage of /:   5.6% of 28.02GB   Processes:             122
+  Memory usage: 8%                Users logged in:       0
+  Swap usage:   0%                IPv4 address for eth0: 10.0.2.4
+
+Expanded Security Maintenance for Applications is not enabled.
+
+0 updates can be applied immediately.
+
+Enable ESM Apps to receive additional future security updates.
+See https://ubuntu.com/esm or run: sudo pro status
+
+
+The list of available updates is more than a week old.
+To check for new updates run: sudo apt update
+
+
+The programs included with the Ubuntu system are free software;
+the exact distribution terms for each program are described in the
+individual files in /usr/share/doc/*/copyright.
+
+Ubuntu comes with ABSOLUTELY NO WARRANTY, to the extent permitted by
+applicable law.
+
+To run a command as administrator (user "root"), use "sudo <command>".
+See "man sudo_root" for details.
+
+azureuser@web000000:~$ ps aux | grep python
+root         724  0.0  0.5  32436 21136 ?        Ss   09:32   0:00 /usr/bin/python3 /usr/bin/networkd-dispatcher --run-startup-triggers
+root         738  0.0  0.7  39440 31424 ?        Ss   09:32   0:00 /usr/bin/python3 -u /usr/sbin/waagent -daemon
+root         793  0.0  0.5 110028 23396 ?        Ssl  09:32   0:00 /usr/bin/python3 /usr/share/unattended-upgrades/unattended-upgrade-shutdown --wait-for-signal
+root        1101  0.0  0.5 178092 21064 ?        Ss   09:33   0:01 /usr/bin/python3 -m http.server 80 --directory /srv/az104/web
+root        1251  0.0  0.9 413724 37480 ?        Sl   09:35   0:05 /usr/bin/python3 -u bin/WALinuxAgent-2.16.0.2-py3.12.egg -run-exthandlers
+azureus+    3013  0.0  0.0   7084  2288 pts/0    S+   13:03   0:00 grep --color=auto python
+azureuser@web000000:~$ curl -i http://localhost/
+HTTP/1.0 200 OK
+Server: SimpleHTTP/0.6 Python/3.12.3
+Date: Mon, 14 Sep 2026 13:03:10 GMT
+Content-type: text/html
+Content-Length: 7
+Last-Modified: Mon, 14 Sep 2026 09:33:17 GMT
+
+OK-WEB
+azureuser@web000000:~$ 
+```
+<img width="906" height="487" alt="Capture d&#39;écran 2026-09-14 150533" src="https://github.com/user-attachments/assets/5706b4ce-51e9-4223-91b4-015767bb90da" />
+
+### VMSS API
+```Bash
+azureuser@vm-jumpbox:~$ ssh azureuser@10.0.3.4
+The authenticity of host '10.0.3.4 (10.0.3.4)' can't be established.
+ED25519 key fingerprint is SHA256:1qbO97a/FiQiLXjnGW8KcqJRtV2H5Zv9TDGkHGYcWA4.
+This key is not known by any other names.
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+Warning: Permanently added '10.0.3.4' (ED25519) to the list of known hosts.
+azureuser@10.0.3.4's password: 
+Welcome to Ubuntu 24.04.4 LTS (GNU/Linux 6.17.0-1022-azure x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/pro
+
+ System information as of Mon Sep 14 13:06:14 UTC 2026
+
+  System load:  0.08              Temperature:           49.9 C
+  Usage of /:   5.6% of 28.02GB   Processes:             121
+  Memory usage: 8%                Users logged in:       0
+  Swap usage:   0%                IPv4 address for eth0: 10.0.3.4
+
+Expanded Security Maintenance for Applications is not enabled.
+
+0 updates can be applied immediately.
+
+Enable ESM Apps to receive additional future security updates.
+See https://ubuntu.com/esm or run: sudo pro status
+
+
+The list of available updates is more than a week old.
+To check for new updates run: sudo apt update
+
+
+The programs included with the Ubuntu system are free software;
+the exact distribution terms for each program are described in the
+individual files in /usr/share/doc/*/copyright.
+
+Ubuntu comes with ABSOLUTELY NO WARRANTY, to the extent permitted by
+applicable law.
+
+To run a command as administrator (user "root"), use "sudo <command>".
+See "man sudo_root" for details.
+
+azureuser@api000000:~$ ps aux | grep python
+root         725  0.0  0.5  32436 20828 ?        Ss   09:32   0:00 /usr/bin/python3 /usr/bin/networkd-dispatcher --run-startup-triggers
+root         737  0.0  0.7  39444 30968 ?        Ss   09:32   0:00 /usr/bin/python3 -u /usr/sbin/waagent -daemon
+root         801  0.0  0.5 110028 23384 ?        Ssl  09:32   0:00 /usr/bin/python3 /usr/share/unattended-upgrades/unattended-upgrade-shutdown --wait-for-signal
+root        1103  0.0  0.5 178092 21056 ?        Ss   09:32   0:01 /usr/bin/python3 -m http.server 80 --directory /srv/az104/api
+root        1252  0.0  0.9 413724 37448 ?        Sl   09:35   0:05 /usr/bin/python3 -u bin/WALinuxAgent-2.16.0.2-py3.12.egg -run-exthandlers
+root        2838  0.6  0.8 118592 33396 ?        Sl   13:06   0:00 /usr/bin/python3 /usr/lib/ubuntu-release-upgrader/check-new-release -q
+azureus+    2945  0.0  0.0   7084  2296 pts/0    S+   13:06   0:00 grep --color=auto python
+azureuser@api000000:~$ curl -i http://localhost/api/health
+HTTP/1.0 200 OK
+Server: SimpleHTTP/0.6 Python/3.12.3
+Date: Mon, 14 Sep 2026 13:06:53 GMT
+Content-type: application/octet-stream
+Content-Length: 15
+Last-Modified: Mon, 14 Sep 2026 09:32:56 GMT
+
+OK-API-HEALTHY
+azureuser@api000000:~$ 
+```
+<img width="907" height="534" alt="Capture d&#39;écran 2026-09-14 150715" src="https://github.com/user-attachments/assets/9f59de1a-3fbc-4686-9a6c-10efcfcdc4e6" />
+
 ---
 
 # Phase 8. Tests fonctionnels
