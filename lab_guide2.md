@@ -3330,7 +3330,23 @@ OK-API-HEALTHY
 ```
 <img width="603" height="50" alt="Capture d&#39;écran 2026-09-14 135221" src="https://github.com/user-attachments/assets/22908737-8149-42e0-892d-bd8a5bf7eb7e" />
 
-### depuis la jumpboxe en serial  ECHEC
+### Test de redirection HTTP vers HTTPS
+```Bash
+curl -I http://<XX.XX.XX.XX>
+```
+### résultat de redirection HTTP vers HTTPS
+```Bash
+HTTP/1.1 301 Moved Permanently
+Server: Microsoft-Azure-Application-Gateway/v2
+Date: Mon, 14 Sep 2026 13:17:41 GMT
+Content-Type: text/html
+Content-Length: 195
+Connection: keep-alive
+Location: https://XX.XX.XX.XX/
+```
+<img width="435" height="183" alt="image" src="https://github.com/user-attachments/assets/29dd29bb-c101-46b4-93b0-e13b3368e789" />
+
+### depuis la jumpboxe en serial
 ```Bash
 azureuser@vm-jumpbox:~$ curl --connect-timeout 5 --max-time 10 -i \
   "http://10.0.1.10:8080/"
