@@ -1,4 +1,4 @@
-# Lab Azure AZ-104 : Architecture Web Multi-Tiers Sécurisée avec Application Gateway WAF v2 (Zero-Trust Egress)
+# Architecture Web Multi-Tiers Sécurisée avec VMSS et Application Gateway WAF v2 (Zero-Trust Egress)
 
 ## 📌 Contexte & Objectifs
 
