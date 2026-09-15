@@ -3292,8 +3292,28 @@ az network application-gateway show-backend-health \
   ]
 }
 ```
+---
 
-## 3. Tests de requêtes HTTP / HTTPS
+# Phase 8. Tests fonctionnels
+
+## 1. Test de redirection HTTP vers HTTPS
+```Bash
+curl -I http://<XX.XX.XX.XX>
+```
+### résultat de redirection HTTP vers HTTPS
+```Bash
+HTTP/1.1 301 Moved Permanently
+Server: Microsoft-Azure-Application-Gateway/v2
+Date: Mon, 14 Sep 2026 13:17:41 GMT
+Content-Type: text/html
+Content-Length: 195
+Connection: keep-alive
+Location: https://XX.XX.XX.XX/
+```
+<img width="435" height="183" alt="image" src="https://github.com/user-attachments/assets/29dd29bb-c101-46b4-93b0-e13b3368e789" />
+
+
+## 2. Tests de requêtes HTTP / HTTPS
 ```Bash
 nicolas [ ~ ]$ curl -I http://XX.XX.XX.XX/
 HTTP/1.1 301 Moved Permanently
@@ -3330,23 +3350,7 @@ OK-API-HEALTHY
 ```
 <img width="603" height="50" alt="Capture d&#39;écran 2026-09-14 135221" src="https://github.com/user-attachments/assets/22908737-8149-42e0-892d-bd8a5bf7eb7e" />
 
-### Test de redirection HTTP vers HTTPS
-```Bash
-curl -I http://<XX.XX.XX.XX>
-```
-### résultat de redirection HTTP vers HTTPS
-```Bash
-HTTP/1.1 301 Moved Permanently
-Server: Microsoft-Azure-Application-Gateway/v2
-Date: Mon, 14 Sep 2026 13:17:41 GMT
-Content-Type: text/html
-Content-Length: 195
-Connection: keep-alive
-Location: https://XX.XX.XX.XX/
-```
-<img width="435" height="183" alt="image" src="https://github.com/user-attachments/assets/29dd29bb-c101-46b4-93b0-e13b3368e789" />
-
-### depuis la jumpboxe en serial
+## 3. Test depuis la jumpboxe en serial
 ```Bash
 azureuser@vm-jumpbox:~$ curl --connect-timeout 5 --max-time 10 -i \
   "http://10.0.1.10:8080/"
@@ -3373,17 +3377,6 @@ OK-API-HEALTHY
 azureuser@vm-jumpbox:~$ 
 ```
 <img width="760" height="491" alt="Capture d&#39;écran 2026-09-14 144042" src="https://github.com/user-attachments/assets/e5d732e9-8c35-4bde-bad2-e30ce5697baa" />
-
-### depuis un PC local
-```Bash
-curl.exe -k -L "http://20.234.223.84/"
-```
-```Bash
-curl.exe -k -L "http://20.234.223.84/api/health"
-```
-### résultat
-<img width="583" height="79" alt="Capture d&#39;écran 2026-09-14 145344" src="https://github.com/user-attachments/assets/80f9965d-7b67-49e6-9270-311d6cadae7c" />
-
 
 ## 4. connexion ssh vers les VM des VMSS depuis la Jumpboxe
 ### VMSS WEB
@@ -3515,66 +3508,15 @@ azureuser@api000000:~$
 ```
 <img width="907" height="534" alt="Capture d&#39;écran 2026-09-14 150715" src="https://github.com/user-attachments/assets/9f59de1a-3fbc-4686-9a6c-10efcfcdc4e6" />
 
----
-
-# Phase 8. Tests fonctionnels
-## 1. Tests fonctionnels
-### Récupérer l’IP publique
+## 3. Test depuis un PC local avec Powershell
 ```Bash
-PUBLIC_IP=$(az network public-ip show \
-  --resource-group "$RG_WORKLOAD" \
-  --name "$PIP_NAME" \
-  --query ipAddress \
-  --output tsv)
-
-echo "$PUBLIC_IP"
+curl.exe -k -L "http://20.234.223.84/"
 ```
-### Depuis un PC local en PowerShell
 ```Bash
-curl.exe -k -I "http://<IP_PUBLIQUE>/"
+curl.exe -k -L "http://20.234.223.84/api/health"
 ```
 ### résultat
-```Bash
-HTTP/1.1 301 Moved Permanently
-Location: https://<IP_PUBLIQUE>/
-```
-### vérification de curl.exe
-```Bash
-curl.exe -k "https://<IP_PUBLIQUE>/"
-curl.exe -k "https://<IP_PUBLIQUE>/api/"
-curl.exe -k "https://<IP_PUBLIQUE>/api/health"
-```
-### résultat
-```Bash
-OK-WEB
-OK-API
-OK-API-HEALTHY
-```
-### 11.2 Depuis la Jumpbox
-Via Console Série Azure :
-### vérification 
-```Bash
-curl -i http://10.0.1.10/
-curl -i http://10.0.1.10/api/
-curl -i http://10.0.1.10/api/health
-```
-### résultat
-```Bash
-OK-WEB
-OK-API
-OK-API-HEALTHY
-```
-
-Avant d’activer WAF Prevention :  
-passe en Prevention que lorsque tous les tests précédents fonctionnent et que les deux pools sont Healthy.
-puis :  
-```Bash
-az network application-gateway waf-policy policy-setting update \
-  --resource-group "$RG_WORKLOAD" \
-  --policy-name waf-policy-lab \
-  --mode Prevention
-```
-
+<img width="583" height="79" alt="Capture d&#39;écran 2026-09-14 145344" src="https://github.com/user-attachments/assets/80f9965d-7b67-49e6-9270-311d6cadae7c" />
 
 
 
