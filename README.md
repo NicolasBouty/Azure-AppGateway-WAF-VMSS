@@ -2,7 +2,7 @@
 
 ## 📌 Contexte & Objectifs
 
-Ce dépôt présente une architecture multi-tiers privée et prête pour la production sur Microsoft Azure. Elle est alignée sur les compétences de la certification **AZ-104 (Administrateur Microsoft Azure)** et intègre les principes du *Zero-Trust* :
+Ce dépôt présente une architecture multi-tiers privée. Elle est alignée sur les compétences de la certification **AZ-104 (Administrateur Microsoft Azure)** et intègre les principes du *Zero-Trust* :
 
 * **Sortie Internet nulle (*Zero Internet Egress*) :** les groupes d'ordinateurs virtuels identiques (*VM Scale Sets* / VMSS) et la Jumpbox d'administration ne possèdent aucune adresse IP publique et ne disposent d'aucun accès sortant vers Internet.
 * **Sécurité WAF :** Azure Application Gateway WAF v2 assure la terminaison TLS, le routage HTTPS public et l'application des règles de pare-feu d'application Web (OWASP v3.2).
@@ -24,7 +24,7 @@ graph TD
         end
 
         subgraph Subnet_Backend_A [Sous-réseau Backend-A : 10.0.2.0/24]
-            VMSS_A[VMSS A - Web Racine /*<br/>2x Instances HTTP : 10.0.2.x<br/>Politique Auto-Repairs]
+            VMSS_A[VMSS A - Web Racine /*<br/>2x Instances HTTP : 10.0.2.x]
         end
 
         subgraph Subnet_Backend_B [Sous-réseau Backend-B : 10.0.3.0/24]
