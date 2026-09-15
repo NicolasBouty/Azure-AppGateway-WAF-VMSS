@@ -3313,7 +3313,7 @@ OK-API-HEALTHY
 ```
 <img width="603" height="50" alt="Capture d&#39;écran 2026-09-14 135221" src="https://github.com/user-attachments/assets/22908737-8149-42e0-892d-bd8a5bf7eb7e" />
 
-## 3. Test depuis la jumpboxe en serial
+## 3. Test depuis la jumpbox en serial
 ```Bash
 azureuser@vm-jumpbox:~$ curl --connect-timeout 5 --max-time 10 -i \
   "http://10.0.1.10:8080/"
@@ -3341,7 +3341,7 @@ azureuser@vm-jumpbox:~$
 ```
 <img width="760" height="491" alt="Capture d&#39;écran 2026-09-14 144042" src="https://github.com/user-attachments/assets/e5d732e9-8c35-4bde-bad2-e30ce5697baa" />
 
-## 4. connexion ssh vers les VM des VMSS depuis la Jumpboxe
+## 4. connexion ssh vers les VM des VMSS depuis la Jumpbox
 ### VMSS WEB
 ```Bash
 azureuser@vm-jumpbox:~$ ssh azureuser@10.0.2.4
