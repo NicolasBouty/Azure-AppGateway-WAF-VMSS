@@ -1923,7 +1923,7 @@ SUBNET_MGMT_ID=/subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab/p
 POOL_WEB_ID=/subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendAddressPools/pool-web
 POOL_API_ID=/subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendAddressPools/pool-api
 ```
-<img width="1715" height="119" alt="Capture d&#39;écran 2026-09-10 110118" src="https://github.com/user-attachments/assets/a7351634-2be2-4c74-b2a7-8980cf0fd6fd" />
+<img width="1715" height="119" alt="Capture d&#39;écran 2026-09-10 110118" src="https://github.com/user-attachments/assets/7abdae45-f5f7-46a2-a0de-6880b65718c2" />
 
 ## 3. Encoder le cloud-init en Base64
 Dans un template ARM/Bicep, customData doit être Base64
