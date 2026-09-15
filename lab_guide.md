@@ -2775,7 +2775,6 @@ az network application-gateway rule list \
   --gateway-name "$APPGW_NAME" \
   --output table
 ```
-Si les noms générés sont différents, remplacer rule1, appGatewayHttpListener, appGatewayBackendHttpSettings et appGatewayBackendPool par ceux obtenus avec la commande de contrôle
 ### résultat
 ```Bash
 Name      ProvisioningState    ResourceGroup
