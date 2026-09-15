@@ -3471,7 +3471,7 @@ azureuser@api000000:~$
 ```
 <img width="907" height="534" alt="Capture d&#39;écran 2026-09-14 150715" src="https://github.com/user-attachments/assets/9f59de1a-3fbc-4686-9a6c-10efcfcdc4e6" />
 
-## 3. Test depuis un PC local avec Powershell
+## 5. Test depuis un PC local avec Powershell
 ```Bash
 curl.exe -k -L "http://XX.XX.XX.XX/"
 ```
