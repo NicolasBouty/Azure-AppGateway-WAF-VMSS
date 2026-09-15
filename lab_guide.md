@@ -2373,6 +2373,7 @@ az network application-gateway show-backend-health \
 ]
 ```
 <img width="536" height="280" alt="Capture d&#39;écran 2026-09-11 164131" src="https://github.com/user-attachments/assets/caf9aa2b-015e-48ad-a46d-08b99f7939c0" />
+
 ### Vérifier l’absence de Load Balancer et PIP VMSS
 ```Bash
 echo "=== Load Balancers du resource group workload ==="
