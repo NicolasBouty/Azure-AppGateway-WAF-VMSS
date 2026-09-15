@@ -17,43 +17,39 @@ Ce dépôt présente une architecture multi-tiers privée. Elle est alignée sur
 graph TD
     Client[Client Internet / Curl / Navigateur]
     
-    subgraph VNet [VNet Azure : 10.0.0.0/16]
+    subgraph VNet [VNet Azure 10.0.0.0/16]
         
-        subgraph Subnet_AppGW [Sous-réseau AppGW : 10.0.1.0/24]
-            AppGW[Application Gateway v2 WAF<br/>IP Publique Standard<br/>IP Privée : 10.0.1.10]
+        subgraph Subnet_AppGW [Subnet AppGW 10.0.1.0/24]
+            AppGW[App Gateway v2 WAF - IP Publique + 10.0.1.10]
         end
 
-        subgraph Subnet_Backend_A [Sous-réseau Backend-A : 10.0.2.0/24]
-            VMSS_A[VMSS A - Web Racine /*<br/>Instances HTTP : 10.0.2.x<br/>(autoscale 1–2)]
+        subgraph Subnet_Backend_A [Subnet Backend-A 10.0.2.0/24]
+            VMSS_A[VMSS Web /* - Instances 10.0.2.x autoscale 1-2]
         end
 
-        subgraph Subnet_Backend_B [Sous-réseau Backend-B : 10.0.3.0/24]
-            VMSS_B[VMSS B - API /api/*<br/>Instances HTTP : 10.0.3.x<br/>(autoscale 1–2)]
+        subgraph Subnet_Backend_B [Subnet Backend-B 10.0.3.0/24]
+            VMSS_B[VMSS API /api/* - Instances 10.0.3.x autoscale 1-2]
         end
 
-        subgraph Subnet_Mgmt [Sous-réseau Management : 10.0.4.0/24]
-            Jumpbox[VM Jumpbox Privée<br/>IP : 10.0.4.x<br/>Console Série / Diag de démarrage]
+        subgraph Subnet_Mgmt [Subnet Mgmt 10.0.4.0/24]
+            Jumpbox[Jumpbox privee 10.0.4.x - Console Serie]
         end
 
     end
 
-    LogAnalytics[(Espace de travail Log Analytics)]
+    LogAnalytics[(Log Analytics)]
 
-    %% Flux Publics
-    Client -->|1. HTTP :80 - Redirection 301| AppGW
-    Client -->|2. HTTPS :443 - Requête GET /| AppGW
-    Client -->|3. HTTPS :443 - Requête GET /api/*| AppGW
+    Client -->|HTTP 80 redirect 301| AppGW
+    Client -->|HTTPS 443 GET /| AppGW
+    Client -->|HTTPS 443 GET /api/*| AppGW
 
-    %% Routage AppGW
-    AppGW -->|Chemin /* -> Pool A| VMSS_A
-    AppGW -->|Chemin /api/* -> Pool B| VMSS_B
+    AppGW -->|Chemin /* vers Pool A| VMSS_A
+    AppGW -->|Chemin /api/* vers Pool B| VMSS_B
 
-    %% Flux Privés & Administration
-    Jumpbox -->|Accès Privé HTTP : 10.0.1.10| AppGW
-    Jumpbox -.->|Rebond SSH Interne :80/22| VMSS_A
+    Jumpbox -->|HTTP 10.0.1.10:8080| AppGW
+    Jumpbox -.->|SSH vers 10.0.2.x et 10.0.3.x| VMSS_A
 
-    %% Logs & WAF
-    AppGW -.->|Journaux WAF & Diagnostic| LogAnalytics
+    AppGW -.->|Logs WAF et acces| LogAnalytics
 ```
 
 ---
