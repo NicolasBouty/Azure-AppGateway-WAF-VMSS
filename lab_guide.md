@@ -2540,7 +2540,7 @@ Les règles CPU sont uniqument une démonstration de configuration.
 AUTOSCALE_WEB_NAME="autoscale-vmss-web"
 AUTOSCALE_API_NAME="autoscale-vmss-api"
 ```
-# 2. Récupération dynamique des Resource IDs
+### Récupération dynamique des Resource IDs
 ```Bash
 VMSS_WEB_ID=$(az vmss show --resource-group "$RG_WORKLOAD" --name "$VMSS_WEB_NAME" --query id --output tsv)
 VMSS_API_ID=$(az vmss show --resource-group "$RG_WORKLOAD" --name "$VMSS_API_NAME" --query id --output tsv)
@@ -2620,6 +2620,7 @@ done
 }
 nicolas [ ~ ]$ 
 ```
+
 ## 10. Vérifier la santé Application Gateway
 ```Bash
 az network application-gateway show-backend-health \
@@ -2938,7 +2939,6 @@ Name              Port    Protocol    Timeout    CookieAffinity    PickHostNameF
 http-setting-web  80      Http        30         Disabled          False                      /subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/probes/probe-web
 http-setting-api  80      Http        30         Disabled          False                      /subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/probes/probe-api
 ```
-<img width="1058" height="190" alt="Capture d&#39;écran 2026-09-10 120812" src="https://github.com/user-attachments/assets/673f7344-1d69-4caf-a156-28c0e2df2a9a" />
 
 ## 5. Créer le port HTTP 80
 Le port HTTPS/443 existe déjà sous le nom : appGatewayFrontendPort
@@ -3020,6 +3020,7 @@ listener-public-http   Http        /subscriptions/<SUBSCRIPTION_ID>/resourceGrou
 listener-public-https  Https       /subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/frontendIPConfigurations/public-frontend-ip   /subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/frontendPorts/port-443   Succeeded  /subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/sslCertificates/appgw-labSslCert
 listener-private-http  Http        /subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/frontendIPConfigurations/private-frontend-ip  /subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/frontendPorts/port-8080  Succeeded
 ```
+
 ## 7. Créer la redirection HTTP vers HTTPS
 La redirection concerne seulement le listener HTTP public sur le port 80.
 ```Bash
