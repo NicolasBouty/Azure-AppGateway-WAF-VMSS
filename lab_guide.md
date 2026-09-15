@@ -2443,44 +2443,6 @@ az vm create \
   --public-ip-address "" \
   --nsg ""
 
-unset JUMPBOX_PASSWORDread -rsp "Mot de passe local de la Jumpbox Ubuntu : " JUMPBOX_PASSWORD
-echo
-
-if [ -z "${JUMPBOX_PASSWORD:-}" ]; then
-  echo "Erreur : mot de passe Jumpbox vide."
-  exit 1
-fi
-
-if [ -z "${SUBNET_MGMT_ID:-}" ]; then
-  echo "Erreur : SUBNET_MGMT_ID est vide."
-  exit 1
-fi
-
-if [ -z "${RG_WORKLOAD:-}" ] || [ -z "${JUMPBOX_NAME:-}" ] || [ -z "${LOCATION:-}" ]; then
-  echo "Erreur : une variable obligatoire est vide."
-  exit 1
-fi
-
-IMAGE_UBUNTU="Canonical:ubuntu-24_04-lts:server:latest"
-SKU_JUMPBOX="Standard_D2als_v7"
-
-echo "Image sélectionnée : $IMAGE_UBUNTU"
-echo "Taille sélectionnée : $SKU_JUMPBOX"
-echo "Subnet cible        : $SUBNET_MGMT_ID"
-
-az vm create \
-  --resource-group "$RG_WORKLOAD" \
-  --name "$JUMPBOX_NAME" \
-  --location "$LOCATION" \
-  --image "$IMAGE_UBUNTU" \
-  --size "$SKU_JUMPBOX" \
-  --admin-username "$ADMIN_USER" \
-  --admin-password "$JUMPBOX_PASSWORD" \
-  --authentication-type password \
-  --subnet "$SUBNET_MGMT_ID" \
-  --public-ip-address "" \
-  --nsg ""
-
 unset JUMPBOX_PASSWORD
 ```
 ### résultat
