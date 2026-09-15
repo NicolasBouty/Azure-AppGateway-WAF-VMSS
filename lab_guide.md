@@ -3313,7 +3313,7 @@ OK-API-HEALTHY
 ```
 <img width="603" height="50" alt="Capture d&#39;écran 2026-09-14 135221" src="https://github.com/user-attachments/assets/22908737-8149-42e0-892d-bd8a5bf7eb7e" />
 
-## 3. Test depuis la jumpbox en serial
+## 3. Test depuis la jumpbox
 ```Bash
 azureuser@vm-jumpbox:~$ curl --connect-timeout 5 --max-time 10 -i \
   "http://10.0.1.10:8080/"
