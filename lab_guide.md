@@ -807,7 +807,7 @@ az network vnet subnet show \
 ### résultat
 ```Bash
   "Delegations": [],
-  "NSG": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab/providers/Microsoft.Network/networkSecurityGroups/nsg-appgw",
+  "NSG": "/subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab/providers/Microsoft.Network/networkSecurityGroups/nsg-appgw",
   "Prefix": "10.0.1.0/24",
   "Subnet": "subnet-appgw"
 ```
@@ -1573,7 +1573,7 @@ az network public-ip show \
 ```Bash
 {
   "Allocation": "Static",
-  "AssociatedTo": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/frontendIPConfigurations/public-frontend-ip",
+  "AssociatedTo": "/subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/frontendIPConfigurations/public-frontend-ip",
   "IP": "XXX.XXX.XXX.XXX",
   "Name": "pip-appgw",
   "SKU": "Standard"
@@ -1613,7 +1613,7 @@ az network application-gateway show \
       "Allocation": "Dynamic",
       "Name": "public-frontend-ip",
       "PrivateIP": null,
-      "PublicIP": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/publicIPAddresses/pip-appgw"
+      "PublicIP": "/subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/publicIPAddresses/pip-appgw"
     },
     {
       "Allocation": "Static",
@@ -1625,22 +1625,22 @@ az network application-gateway show \
   "Listeners": [
     {
       "CertificateId": null,
-      "FrontendIPId": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/frontendIPConfigurations/public-frontend-ip",
-      "FrontendPortId": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/frontendPorts/port-80",
+      "FrontendIPId": "/subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/frontendIPConfigurations/public-frontend-ip",
+      "FrontendPortId": "/subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/frontendPorts/port-80",
       "Name": "listener-public-http",
       "Protocol": "Http"
     },
     {
-      "CertificateId": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/sslCertificates/appgw-labSslCert",
-      "FrontendIPId": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/frontendIPConfigurations/public-frontend-ip",
-      "FrontendPortId": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/frontendPorts/port-443",
+      "CertificateId": "/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/sslCertificates/appgw-labSslCert",
+      "FrontendIPId": "/subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/frontendIPConfigurations/public-frontend-ip",
+      "FrontendPortId": "/subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/frontendPorts/port-443",
       "Name": "listener-public-https",
       "Protocol": "Https"
     },
     {
       "CertificateId": null,
-      "FrontendIPId": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/frontendIPConfigurations/private-frontend-ip",
-      "FrontendPortId": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/frontendPorts/port-8080",
+      "FrontendIPId": "/subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/frontendIPConfigurations/private-frontend-ip",
+      "FrontendPortId": "/subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/frontendPorts/port-8080",
       "Name": "listener-private-http",
       "Protocol": "Http"
     }
@@ -1725,8 +1725,8 @@ az network application-gateway show \
 {
   "PathMaps": [
     {
-      "DefaultPoolId": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendAddressPools/pool-web",
-      "DefaultSettingId": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendHttpSettingsCollection/http-setting-web",
+      "DefaultPoolId": "/subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendAddressPools/pool-web",
+      "DefaultSettingId": "/subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendHttpSettingsCollection/http-setting-web",
       "Name": "map-public",
       "Paths": [
         {
@@ -1734,14 +1734,14 @@ az network application-gateway show \
           "Patterns": [
             "/api/*"
           ],
-          "PoolId": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendAddressPools/pool-api",
-          "SettingId": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendHttpSettingsCollection/http-setting-api"
+          "PoolId": "/subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendAddressPools/pool-api",
+          "SettingId": "/subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendHttpSettingsCollection/http-setting-api"
         }
       ]
     },
     {
-      "DefaultPoolId": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendAddressPools/pool-web",
-      "DefaultSettingId": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendHttpSettingsCollection/http-setting-web",
+      "DefaultPoolId": "/subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendAddressPools/pool-web",
+      "DefaultSettingId": "/subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendHttpSettingsCollection/http-setting-web",
       "Name": "map-private",
       "Paths": [
         {
@@ -1749,8 +1749,8 @@ az network application-gateway show \
           "Patterns": [
             "/api/*"
           ],
-          "PoolId": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendAddressPools/pool-api",
-          "SettingId": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendHttpSettingsCollection/http-setting-api"
+          "PoolId": "/subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendAddressPools/pool-api",
+          "SettingId": "/subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendHttpSettingsCollection/http-setting-api"
         }
       ]
     }
@@ -1760,7 +1760,7 @@ az network application-gateway show \
       "IncludePath": true,
       "IncludeQueryString": true,
       "Name": "redirect-http-to-https",
-      "TargetListenerId": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/httpListeners/listener-public-https",
+      "TargetListenerId": "/subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/httpListeners/listener-public-https",
       "Type": "Permanent"
     }
   ]
@@ -1779,13 +1779,13 @@ az network application-gateway show-backend-health \
   "backendAddressPools": [
     {
       "backendAddressPool": {
-        "id": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendAddressPools/pool-api",
+        "id": "/subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendAddressPools/pool-api",
         "resourceGroup": "grp_tpaz104-lab2"
       },
       "backendHttpSettingsCollection": [
         {
           "backendHttpSettings": {
-            "id": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendHttpSettingsCollection/http-setting-api",
+            "id": "/subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendHttpSettingsCollection/http-setting-api",
             "resourceGroup": "grp_tpaz104-lab2"
           },
           "servers": []
@@ -1794,13 +1794,13 @@ az network application-gateway show-backend-health \
     },
     {
       "backendAddressPool": {
-        "id": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendAddressPools/pool-web",
+        "id": "/subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendAddressPools/pool-web",
         "resourceGroup": "grp_tpaz104-lab2"
       },
       "backendHttpSettingsCollection": [
         {
           "backendHttpSettings": {
-            "id": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendHttpSettingsCollection/http-setting-web",
+            "id": "/subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendHttpSettingsCollection/http-setting-web",
             "resourceGroup": "grp_tpaz104-lab2"
           },
           "servers": []
@@ -1917,11 +1917,11 @@ printf '%s\n' \
 ```
 ### résultat
 ```Bash
-SUBNET_WEB_ID=/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab/providers/Microsoft.Network/virtualNetworks/vnet_tpaz104-lab/subnets/subnet-backend-a
-SUBNET_API_ID=/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab/providers/Microsoft.Network/virtualNetworks/vnet_tpaz104-lab/subnets/subnet-backend-b
-SUBNET_MGMT_ID=/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab/providers/Microsoft.Network/virtualNetworks/vnet_tpaz104-lab/subnets/subnet-mgmt
-POOL_WEB_ID=/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendAddressPools/pool-web
-POOL_API_ID=/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendAddressPools/pool-api
+SUBNET_WEB_ID=/subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab/providers/Microsoft.Network/virtualNetworks/vnet_tpaz104-lab/subnets/subnet-backend-a
+SUBNET_API_ID=/subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab/providers/Microsoft.Network/virtualNetworks/vnet_tpaz104-lab/subnets/subnet-backend-b
+SUBNET_MGMT_ID=/subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab/providers/Microsoft.Network/virtualNetworks/vnet_tpaz104-lab/subnets/subnet-mgmt
+POOL_WEB_ID=/subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendAddressPools/pool-web
+POOL_API_ID=/subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendAddressPools/pool-api
 ```
 <img width="1715" height="119" alt="Capture d&#39;écran 2026-09-10 110118" src="https://github.com/user-attachments/assets/a7351634-2be2-4c74-b2a7-8980cf0fd6fd" />
 
@@ -2287,23 +2287,23 @@ done
 === vmss-web ===
 {
   "AppGatewayPools": [
-    "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendAddressPools/pool-web"
+    "/subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendAddressPools/pool-web"
   ],
   "Capacity": 1,
   "Mode": "Uniform",
   "Name": "vmss-web",
-  "Subnet": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab/providers/Microsoft.Network/virtualNetworks/vnet_tpaz104-lab/subnets/subnet-backend-a",
+  "Subnet": "/subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab/providers/Microsoft.Network/virtualNetworks/vnet_tpaz104-lab/subnets/subnet-backend-a",
   "UpgradeMode": "Manual"
 }
 === vmss-api ===
 {
   "AppGatewayPools": [
-    "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendAddressPools/pool-api"
+    "/subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendAddressPools/pool-api"
   ],
   "Capacity": 1,
   "Mode": "Uniform",
   "Name": "vmss-api",
-  "Subnet": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab/providers/Microsoft.Network/virtualNetworks/vnet_tpaz104-lab/subnets/subnet-backend-b",
+  "Subnet": "/subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab/providers/Microsoft.Network/virtualNetworks/vnet_tpaz104-lab/subnets/subnet-backend-b",
   "UpgradeMode": "Manual"
 }
 ```
@@ -2342,8 +2342,8 @@ az vmss show \
 ```
 ### résultat
 ```Bash
-/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendAddressPools/pool-web
-/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendAddressPools/pool-api
+/subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendAddressPools/pool-web
+/subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendAddressPools/pool-api
 ```
 ### show-backend-health
 ```Bash
@@ -2398,7 +2398,7 @@ az network public-ip list \
 ```Bash
 Name       IP              SKU       AssociatedTo
 ---------  --------------  --------  -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-pip-appgw  137.117.139.94  Standard  /subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/frontendIPConfigurations/public-frontend-ip
+pip-appgw  XX.XX.XX.XX  Standard  /subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/frontendIPConfigurations/public-frontend-ip
 ```
 
 ## 8. Créer la Jumpbox privée
@@ -2486,7 +2486,7 @@ unset JUMPBOX_PASSWORD
 ```Bash
 {
   "fqdns": "",
-  "id": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Compute/virtualMachines/vm-jumpbox",
+  "id": "/subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Compute/virtualMachines/vm-jumpbox",
   "location": "westeurope",
   "macAddress": "38-33-C5-C5-19-0C",
   "powerState": "VM running",
@@ -2527,7 +2527,7 @@ az network nic show \
   "NIC_NSG": null,
   "PrivateIP": "10.0.4.4",
   "PublicIP": null,
-  "Subnet": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab/providers/Microsoft.Network/virtualNetworks/vnet_tpaz104-lab/subnets/subnet-mgmt"
+  "Subnet": "/subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab/providers/Microsoft.Network/virtualNetworks/vnet_tpaz104-lab/subnets/subnet-mgmt"
 }
 ```
 
@@ -2632,13 +2632,13 @@ az network application-gateway show-backend-health \
   "backendAddressPools": [
     {
       "backendAddressPool": {
-        "id": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendAddressPools/pool-api",
+        "id": "/subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendAddressPools/pool-api",
         "resourceGroup": "grp_tpaz104-lab2"
       },
       "backendHttpSettingsCollection": [
         {
           "backendHttpSettings": {
-            "id": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendHttpSettingsCollection/http-setting-api",
+            "id": "/subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendHttpSettingsCollection/http-setting-api",
             "resourceGroup": "grp_tpaz104-lab2"
           },
           "servers": [
@@ -2647,7 +2647,7 @@ az network application-gateway show-backend-health \
               "health": "Healthy",
               "healthProbeLog": "Success. Received 200 status code",
               "ipConfiguration": {
-                "id": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Compute/virtualMachineScaleSets/vmss-api/virtualMachines/0/networkInterfaces/nic-api/ipConfigurations/ipconfig-api",
+                "id": "/subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Compute/virtualMachineScaleSets/vmss-api/virtualMachines/0/networkInterfaces/nic-api/ipConfigurations/ipconfig-api",
                 "resourceGroup": "grp_tpaz104-lab2"
               }
             }
@@ -2657,13 +2657,13 @@ az network application-gateway show-backend-health \
     },
     {
       "backendAddressPool": {
-        "id": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendAddressPools/pool-web",
+        "id": "/subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendAddressPools/pool-web",
         "resourceGroup": "grp_tpaz104-lab2"
       },
       "backendHttpSettingsCollection": [
         {
           "backendHttpSettings": {
-            "id": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendHttpSettingsCollection/http-setting-web",
+            "id": "/subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendHttpSettingsCollection/http-setting-web",
             "resourceGroup": "grp_tpaz104-lab2"
           },
           "servers": [
@@ -2672,7 +2672,7 @@ az network application-gateway show-backend-health \
               "health": "Healthy",
               "healthProbeLog": "Success. Received 200 status code",
               "ipConfiguration": {
-                "id": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Compute/virtualMachineScaleSets/vmss-web/virtualMachines/0/networkInterfaces/nic-web/ipConfigurations/ipconfig-web",
+                "id": "/subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Compute/virtualMachineScaleSets/vmss-web/virtualMachines/0/networkInterfaces/nic-web/ipConfigurations/ipconfig-web",
                 "resourceGroup": "grp_tpaz104-lab2"
               }
             }
@@ -2934,8 +2934,8 @@ az network application-gateway http-settings list \
 ```Bash
 Name              Port    Protocol    Timeout    CookieAffinity    PickHostNameFromBackend    ProbeId
 ----------------  ------  ----------  ---------  ----------------  -------------------------  --------------------------------------------------------------------------------------------------------------------------------------------------------------
-http-setting-web  80      Http        30         Disabled          False                      /subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/probes/probe-web
-http-setting-api  80      Http        30         Disabled          False                      /subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/probes/probe-api
+http-setting-web  80      Http        30         Disabled          False                      /subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/probes/probe-web
+http-setting-api  80      Http        30         Disabled          False                      /subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/probes/probe-api
 ```
 <img width="1058" height="190" alt="Capture d&#39;écran 2026-09-10 120812" src="https://github.com/user-attachments/assets/673f7344-1d69-4caf-a156-28c0e2df2a9a" />
 
@@ -3015,9 +3015,9 @@ La commande affiche les IDs ARM complets. Les relations attendues sont :
 ```Bash
 Name                   Protocol    FrontendIPId                                                                                                                                                                                FrontendPortId                                                                                                                                                         State      SSLCertificateId
 ---------------------  ----------  ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  ---------------------------------------------------------------------------------------------------------------------------------------------------------------------  ---------  ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-listener-public-http   Http        /subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/frontendIPConfigurations/public-frontend-ip   /subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/frontendPorts/port-80    Succeeded
-listener-public-https  Https       /subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/frontendIPConfigurations/public-frontend-ip   /subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/frontendPorts/port-443   Succeeded  /subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/sslCertificates/appgw-labSslCert
-listener-private-http  Http        /subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/frontendIPConfigurations/private-frontend-ip  /subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/frontendPorts/port-8080  Succeeded
+listener-public-http   Http        /subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/frontendIPConfigurations/public-frontend-ip   /subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/frontendPorts/port-80    Succeeded
+listener-public-https  Https       /subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/frontendIPConfigurations/public-frontend-ip   /subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/frontendPorts/port-443   Succeeded  /subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/sslCertificates/appgw-labSslCert
+listener-private-http  Http        /subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/frontendIPConfigurations/private-frontend-ip  /subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/frontendPorts/port-8080  Succeeded
 ```
 ## 7. Créer la redirection HTTP vers HTTPS
 La redirection concerne seulement le listener HTTP public sur le port 80.
@@ -3054,7 +3054,7 @@ az network application-gateway redirect-config show \
   "IncludeQueryString": true,
   "Name": "redirect-http-to-https",
   "State": null,
-  "TargetListenerId": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/httpListeners/listener-public-https",
+  "TargetListenerId": "/subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/httpListeners/listener-public-https",
   "Type": "Permanent"
 }
 ```
@@ -3117,8 +3117,8 @@ done
 ```Bash
 === map-public ===
 {
-  "DefaultPoolId": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendAddressPools/pool-web",
-  "DefaultSettingId": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendHttpSettingsCollection/http-setting-web",
+  "DefaultPoolId": "/subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendAddressPools/pool-web",
+  "DefaultSettingId": "/subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendHttpSettingsCollection/http-setting-web",
   "Name": "map-public",
   "PathRules": [
     {
@@ -3126,15 +3126,15 @@ done
       "Paths": [
         "/api/*"
       ],
-      "PoolId": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendAddressPools/pool-api",
-      "SettingId": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendHttpSettingsCollection/http-setting-api"
+      "PoolId": "/subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendAddressPools/pool-api",
+      "SettingId": "/subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendHttpSettingsCollection/http-setting-api"
     }
   ]
 }
 === map-private ===
 {
-  "DefaultPoolId": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendAddressPools/pool-web",
-  "DefaultSettingId": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendHttpSettingsCollection/http-setting-web",
+  "DefaultPoolId": "/subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendAddressPools/pool-web",
+  "DefaultSettingId": "/subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendHttpSettingsCollection/http-setting-web",
   "Name": "map-private",
   "PathRules": [
     {
@@ -3142,8 +3142,8 @@ done
       "Paths": [
         "/api/*"
       ],
-      "PoolId": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendAddressPools/pool-api",
-      "SettingId": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendHttpSettingsCollection/http-setting-api"
+      "PoolId": "/subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendAddressPools/pool-api",
+      "SettingId": "/subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendHttpSettingsCollection/http-setting-api"
     }
   ]
 }
@@ -3223,9 +3223,9 @@ az network application-gateway rule list \
 ```Bash
 Name                Priority    Type              ListenerId                                                                                                                                                                         PathMapId                                                                                                                                                              State      RedirectId
 ------------------  ----------  ----------------  ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  ---------------------------------------------------------------------------------------------------------------------------------------------------------------------  ---------  -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-rule-public-path    100         PathBasedRouting  /subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/httpListeners/listener-public-https  /subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/urlPathMaps/map-public   Succeeded
-rule-redirect-http  200         Basic             /subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/httpListeners/listener-public-http                                                                                                                                                                          Succeeded  /subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/redirectConfigurations/redirect-http-to-https
-rule-private-path   300         PathBasedRouting  /subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/httpListeners/listener-private-http  /subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/urlPathMaps/map-private  Succeeded
+rule-public-path    100         PathBasedRouting  /subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/httpListeners/listener-public-https  /subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/urlPathMaps/map-public   Succeeded
+rule-redirect-http  200         Basic             /subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/httpListeners/listener-public-http                                                                                                                                                                          Succeeded  /subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/redirectConfigurations/redirect-http-to-https
+rule-private-path   300         PathBasedRouting  /subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/httpListeners/listener-private-http  /subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/urlPathMaps/map-private  Succeeded
 ```
 
 ## 2. Santé des backends
@@ -3241,13 +3241,13 @@ az network application-gateway show-backend-health \
   "backendAddressPools": [
     {
       "backendAddressPool": {
-        "id": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendAddressPools/pool-api",
+        "id": "/subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendAddressPools/pool-api",
         "resourceGroup": "grp_tpaz104-lab2"
       },
       "backendHttpSettingsCollection": [
         {
           "backendHttpSettings": {
-            "id": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendHttpSettingsCollection/http-setting-api",
+            "id": "/subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendHttpSettingsCollection/http-setting-api",
             "resourceGroup": "grp_tpaz104-lab2"
           },
           "servers": [
@@ -3256,7 +3256,7 @@ az network application-gateway show-backend-health \
               "health": "Healthy",
               "healthProbeLog": "Success. Received 200 status code",
               "ipConfiguration": {
-                "id": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Compute/virtualMachineScaleSets/vmss-api/virtualMachines/0/networkInterfaces/nic-api/ipConfigurations/ipconfig-api",
+                "id": "/subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Compute/virtualMachineScaleSets/vmss-api/virtualMachines/0/networkInterfaces/nic-api/ipConfigurations/ipconfig-api",
                 "resourceGroup": "grp_tpaz104-lab2"
               }
             }
@@ -3266,13 +3266,13 @@ az network application-gateway show-backend-health \
     },
     {
       "backendAddressPool": {
-        "id": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendAddressPools/pool-web",
+        "id": "/subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendAddressPools/pool-web",
         "resourceGroup": "grp_tpaz104-lab2"
       },
       "backendHttpSettingsCollection": [
         {
           "backendHttpSettings": {
-            "id": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendHttpSettingsCollection/http-setting-web",
+            "id": "/subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Network/applicationGateways/appgw-lab/backendHttpSettingsCollection/http-setting-web",
             "resourceGroup": "grp_tpaz104-lab2"
           },
           "servers": [
@@ -3281,7 +3281,7 @@ az network application-gateway show-backend-health \
               "health": "Healthy",
               "healthProbeLog": "Success. Received 200 status code",
               "ipConfiguration": {
-                "id": "/subscriptions/088cb8d6-6945-4934-a2cb-cad11b418003/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Compute/virtualMachineScaleSets/vmss-web/virtualMachines/0/networkInterfaces/nic-web/ipConfigurations/ipconfig-web",
+                "id": "/subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.Compute/virtualMachineScaleSets/vmss-web/virtualMachines/0/networkInterfaces/nic-web/ipConfigurations/ipconfig-web",
                 "resourceGroup": "grp_tpaz104-lab2"
               }
             }
@@ -3510,10 +3510,10 @@ azureuser@api000000:~$
 
 ## 3. Test depuis un PC local avec Powershell
 ```Bash
-curl.exe -k -L "http://20.234.223.84/"
+curl.exe -k -L "http://XX.XX.XX.XX/"
 ```
 ```Bash
-curl.exe -k -L "http://20.234.223.84/api/health"
+curl.exe -k -L "http://XX.XX.XX.XX/api/health"
 ```
 ### résultat
 <img width="583" height="79" alt="Capture d&#39;écran 2026-09-14 145344" src="https://github.com/user-attachments/assets/80f9965d-7b67-49e6-9270-311d6cadae7c" />
