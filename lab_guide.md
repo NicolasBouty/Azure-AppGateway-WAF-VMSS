@@ -3286,16 +3286,16 @@ Location: https://XX.XX.XX.XX/
 
 ## 2. Tests de requêtes HTTP / HTTPS
 ```Bash
-nicolas [ ~ ]$ curl -I http://XX.XX.XX.XX/
+nicolas [ ~ ]$  curl -I http://40.114.221.60/
 HTTP/1.1 301 Moved Permanently
 Server: Microsoft-Azure-Application-Gateway/v2
-Date: Mon, 14 Sep 2026 11:37:17 GMT
+Date: Wed, 16 Sep 2026 09:09:30 GMT
 Content-Type: text/html
 Content-Length: 195
 Connection: keep-alive
-Location: https://XX.XX.XX.XX/
+Location: https://40.114.221.60/
 ```
-<img width="475" height="188" alt="Capture d&#39;écran 2026-09-14 134314" src="https://github.com/user-attachments/assets/fcf587d6-a404-49a6-81bb-2226b6f621e9" />
+<img width="471" height="187" alt="Capture d&#39;écran 2026-09-16 111235" src="https://github.com/user-attachments/assets/1310ebbe-c274-4dd4-8e9c-3b8f4fb78e8b" />
 
 ```Bash
 nicolas [ ~ ]$ curl -k -I "https://XX.XX.XX.XX/api/health"
