@@ -3275,40 +3275,48 @@ curl -I http://<XX.XX.XX.XX>
 ```Bash
 HTTP/1.1 301 Moved Permanently
 Server: Microsoft-Azure-Application-Gateway/v2
-Date: Mon, 14 Sep 2026 13:17:41 GMT
+Date: Wed, 16 Sep 2026 09:09:30 GMT
 Content-Type: text/html
 Content-Length: 195
 Connection: keep-alive
 Location: https://XX.XX.XX.XX/
 ```
-<img width="435" height="183" alt="image" src="https://github.com/user-attachments/assets/29dd29bb-c101-46b4-93b0-e13b3368e789" />
+<img width="481" height="192" alt="Capture d&#39;écran 2026-09-16 112621" src="https://github.com/user-attachments/assets/ed03c749-53e6-4a0e-b486-83dd1d21d6d3" />
 
-
-## 2. Tests de requêtes HTTP / HTTPS
+## 2. Tests de requêtes HTTPS
 ```Bash
-nicolas [ ~ ]$  curl -I http://40.114.221.60/
-HTTP/1.1 301 Moved Permanently
-Server: Microsoft-Azure-Application-Gateway/v2
-Date: Wed, 16 Sep 2026 09:09:30 GMT
-Content-Type: text/html
-Content-Length: 195
-Connection: keep-alive
-Location: https://40.114.221.60/
+curl -k -I https://XX.XX.XX.XX/
 ```
-<img width="471" height="187" alt="Capture d&#39;écran 2026-09-16 111235" src="https://github.com/user-attachments/assets/1310ebbe-c274-4dd4-8e9c-3b8f4fb78e8b" />
-
+### résultat de tests de requêtes HTTPS
 ```Bash
-nicolas [ ~ ]$ curl -k -I "https://XX.XX.XX.XX/api/health"
 HTTP/1.1 200 OK
-Date: Mon, 14 Sep 2026 11:37:51 GMT
+Date: Wed, 16 Sep 2026 09:22:57 GMT
+Content-Type: text/html
+Content-Length: 7
+Connection: keep-alive
+Server: SimpleHTTP/0.6 Python/3.12.3
+Last-Modified: Wed, 16 Sep 2026 08:49:45 GMT
+```
+<img width="498" height="190" alt="Capture d&#39;écran 2026-09-16 112801" src="https://github.com/user-attachments/assets/663d4ddc-d14e-4be9-81fe-413dc3febf7b" />
+
+### requêtes HTTPS api/health
+```Bash
+curl -k -I https://XX.XX.XX.XX/api/health
+```
+### résultat de tests de requête HTTPS api/health
+```Bash
+nicolas [ ~ ]$ curl -k -I https://XX.XX.XX.XX/api/health
+HTTP/1.1 200 OK
+Date: Wed, 16 Sep 2026 09:31:34 GMT
 Content-Type: application/octet-stream
 Content-Length: 15
 Connection: keep-alive
 Server: SimpleHTTP/0.6 Python/3.12.3
-Last-Modified: Mon, 14 Sep 2026 09:32:56 GMT
+Last-Modified: Wed, 16 Sep 2026 08:49:20 GMT
 ```
-<img width="616" height="191" alt="Capture d&#39;écran 2026-09-14 134503" src="https://github.com/user-attachments/assets/5111bdc2-b0c4-430e-a96e-553a22562e1f" />
+<img width="597" height="187" alt="Capture d&#39;écran 2026-09-16 113208" src="https://github.com/user-attachments/assets/3a0e3cef-235a-456e-9965-7f0193d9f328" />
 
+### Tests OK-WEB et OK-API
 ```Bash
 nicolas [ ~ ]$ curl -k -L "http://XX.XX.XX.XX/"
 OK-WEB
