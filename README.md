@@ -73,23 +73,23 @@ graph TD
 
 ## 🚀 Déploiement
 
-### **Préréquis**
+### **Prérequis**
 * **Azure CLI** installé et session active (`az login`).
-* Un certificat SSL/TLS au format PKCS#12 (`~/appgw.pfx`).
+* Un certificat SSL/TLS au format PKCS#12 situé dans le répertoire personnel (`~/appgw.pfx`).
 * Les fichiers de configuration `cloud-init-web.yaml` et `cloud-init-api.yaml` présents à la racine du projet.
 
 ### **Fichiers de paramètres**
 L'infrastructure s'appuie sur la syntaxe native `.bicepparam` pour transmettre les variables au gabarit `main.bicep` :
-* `parameters.bicepparam` : contient les paramètres d'infrastructure (nom du groupe de ressources, région, SKU des VM, identifiants).
+* `parameters.bicepparam` : contient la configuration globale (région, SKU des VM, identifiants).
 * `cloudinit-parameters.bicepparam` : gère l'injection des scripts Cloud-Init pour les instances Web et API.
 
 ### **Procédure d'exécution**
 
-**Rendre le script d'automatisation exécutable :**
+   **Rendre le script d'automatisation exécutable :**
    ```bash
    chmod +x deploy.sh
 ```
-**Rendre le script d'automatisation exécutable :**
+   **exécuter le script :**
    ```bash
    ./deploy.sh
 ```
