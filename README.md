@@ -5,7 +5,7 @@
 Ce dépôt présente une architecture multi-tiers privée. Elle est alignée sur les compétences de la certification **AZ-104 (Administrateur Microsoft Azure)** et intègre les principes du *Zero-Trust* :
 
 * **Sortie Internet nulle (*Zero Internet Egress*) :** les ensembles de machines virtuelles identiques (*VM Scale Sets* / VMSS) et la Jumpbox d'administration ne possèdent aucune adresse IP publique et n'ont aucun accès sortant direct vers Internet.
-* **Sécurité WAF :** Azure Application Gateway WAF v2 assure la terminaison TLS, le routage HTTPS public et l'application des règles de pare-feu d'application Web (OWASP CRS 3.2).
+* **Observabilité & Audit KQL :** streaming des logs WAF (`ApplicationGatewayFirewallLog`) vers un espace Log Analytics pour l'analyse des menaces en temps réel.
 * **Entrée privée (*Private Gateway Ingress*) :** accès administratif et routage interne via une adresse IP privée (`10.0.1.10`).
 * **Routage par chemin (*Path-Based Routing*) :** répartition intelligente du trafic séparant la racine `/` (service Web) et `/api/*` (service API) vers des pools *backend* dédiés.
 
