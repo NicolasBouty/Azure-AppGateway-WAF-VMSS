@@ -68,3 +68,23 @@ graph TD
   * **1 VM Jumpbox :** instance d'administration privée dans `subnet-mgmt` (accès console série / diagnostic).
 * **Supervision & Observabilité :**
   * **1 Espace de travail Log Analytics :** collecte centralisée des journaux d'accès AppGW, des événements WAF (OWASP), des métriques VMSS et (optionnellement) des NSG Flow Logs.
+
+---
+
+## 🚀 Déploiement
+
+### **Préréquis**
+* **Azure CLI** installé et session active (`az login`).
+* Un certificat SSL/TLS au format PKCS#12 (`~/appgw.pfx`).
+* Les fichiers de configuration `cloud-init-web.yaml` et `cloud-init-api.yaml` présents à la racine du projet.
+
+### **Fichiers de paramètres**
+L'infrastructure s'appuie sur la syntaxe native `.bicepparam` pour transmettre les variables au gabarit `main.bicep` :
+* `parameters.bicepparam` : contient les paramètres d'infrastructure (nom du groupe de ressources, région, SKU des VM, identifiants).
+* `cloudinit-parameters.bicepparam` : gère l'injection des scripts Cloud-Init pour les instances Web et API.
+
+### **Procédure d'exécution**
+
+1. **Rendre le script d'automatisation exécutable :**
+   ```bash
+   chmod +x deploy.sh
