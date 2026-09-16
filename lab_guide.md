@@ -3600,9 +3600,22 @@ curl -k -s -o /dev/null -w "%{http_code}\n" "https://XX.XX.XX.XX/?id=1%27%20OR%2
 ```Bash
 403
 ```
-<img width="1124" height="48" alt="Capture d&#39;écran 2026-09-16 123308" src="https://github.com/user-attachments/assets/69854fcd-74c0-4f6e-804e-7f5395a3a7b8" />
+<img width="1124" height="48" alt="Capture d&#39;écran 2026-09-16 123308" src="https://github.com/user-attachments/assets/b194b5e0-069d-4302-8e38-3436b32eb483" />
 
 ### Vérification des logs WAF dans Log Analytics
+kql
+```Bash
+AzureDiagnostics
+| where ResourceType == "APPLICATIONGATEWAYS"
+| where Category == "ApplicationGatewayFirewallLog"
+| where ruleId_s startswith "942"
+| project TimeGenerated, clientIp_s, requestUri_s, ruleId_s, action_s, details_message_s
+| order by TimeGenerated desc
+```
+<img width="964" height="176" alt="Capture d&#39;écran 2026-09-16 124213" src="https://github.com/user-attachments/assets/a46bc236-2d27-419d-90d1-ecc61f115e67" />
+
+## 4. Logs et observabilité
+### Requête globale :
 kql
 ```Bash
 AzureDiagnostics
@@ -3612,20 +3625,6 @@ AzureDiagnostics
 | project TimeGenerated, clientIp_s, requestUri_s, ruleId_s, details_message_s, action_s
 | order by TimeGenerated desc
 ```
-
-
-
-
-## 1.
-### vérification 
-```Bash
-
-```
-### résultat
-```Bash
-
-```
-
-
+<img width="924" height="266" alt="Capture d&#39;écran 2026-09-16 125005" src="https://github.com/user-attachments/assets/511ef102-a5c2-4173-871a-be811ea10c88" />
 
 
