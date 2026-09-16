@@ -2326,6 +2326,9 @@ Name      Capacity    State      Mode
 vmss-api  1           Succeeded  Uniform
 vmss-web  1           Succeeded  Uniform
 ```
+<img width="372" height="90" alt="Capture d&#39;écran 2026-09-16 105232" src="https://github.com/user-attachments/assets/4589b8f1-133e-4265-b6e4-769a87b99a68" />
+
+
 ### Vérifier les associations pools
 ```Bash
 az vmss show \
