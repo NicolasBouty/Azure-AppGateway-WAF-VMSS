@@ -103,17 +103,6 @@ az network vnet subnet update \
 ```
 ---
 
-## 6. Public IP Reservation
-```Bash
-az network public-ip create \
-  --resource-group $RG_NETWORK \
-  --name $PIP_NAME \
-  --location $LOCATION \
-  --sku Standard \
-  --allocation-method Static
-```
----
-
 # ✅ Phase 1 — Vérification
 
 ## Vérification de l'association sous-réseau/NSG
