@@ -3497,6 +3497,69 @@ curl.exe -k -L "http://XX.XX.XX.XX/api/health"
 ### résultat
 <img width="583" height="79" alt="Capture d&#39;écran 2026-09-14 145344" src="https://github.com/user-attachments/assets/80f9965d-7b67-49e6-9270-311d6cadae7c" />
 
+---
+
+# Phase 9. Sécurité WAF et Observabilité
+## 1. Créer l'espace Log Analytics
+### Variable
+```Bash
+RG_WORKLOAD="grp_tpaz104-lab2"
+LOCATION="westeurope"
+```
+### créer un nouveau workspace
+```Bash
+az monitor log-analytics workspace create \
+  --resource-group "$RG_WORKLOAD" \
+  --workspace-name "law-tpaz104" \
+  --location "$LOCATION"
+```
+### Récupérer les identifiants de l'App Gateway et du Workspace
+```Bash
+APPGW_ID=$(az network application-gateway show --resource-group "$RG_WORKLOAD" --name "appgw-lab" --query id -o tsv)
+LAW_ID=$(az monitor log-analytics workspace show --resource-group "$RG_WORKLOAD" --workspace-name "law-tpaz104" --query id -o tsv)
+### Activer l'envoi des logs WAF
+```Bash
+az monitor diagnostic-settings create \
+  --name "diag-appgw" \
+  --resource "$APPGW_ID" \
+  --workspace "$LAW_ID" \
+  --logs '[{"category": "ApplicationGatewayFirewallLog", "enabled": true}]'
+```
+### vérification 
+```Bash
+az monitor diagnostic-settings list --resource "$APPGW_ID" -o table
+```
+### résultat
+```Bash
+LogAnalyticsDestinationType    Name        ResourceGroup     WorkspaceId
+-----------------------------  ----------  ----------------  --------------------------------------------------------------------------------------------------------------------------------------------------
+AzureDiagnostics               diag-appgw  grp_tpaz104-lab2  /subscriptions/<SUBSCRIPTION_ID>/resourceGroups/grp_tpaz104-lab2/providers/Microsoft.OperationalInsights/work
+```
+
+## 2. WAF — Mode Detection (logs)
+### Test d’injection SQL (SQLi)
+```Bash
+curl -k -s -o /dev/null -w "%{http_code}\n" "https://<IP_PUBLIQUE>/?id=1%27%20OR%20%271%27=%271"
+```
+### résultat
+```Bash
+200
+```
+<img width="1126" height="50" alt="Capture d&#39;écran 2026-09-16 115724" src="https://github.com/user-attachments/assets/13e612ad-7a3c-4df0-810c-812b65a6d1cd" />
+
+### Vérification des logs WAF dans Log Analytics
+kql
+```Bash
+AzureDiagnostics
+| where ResourceType == "APPLICATIONGATEWAYS"
+| where Category == "ApplicationGatewayFirewallLog"
+| where ruleId_s startswith "942"
+| project TimeGenerated, clientIp_s, requestUri_s, ruleId_s, details_message_s, action_s
+| order by TimeGenerated desc
+```
+
+<img width="915" height="236" alt="Capture d&#39;écran 2026-09-16 121748" src="https://github.com/user-attachments/assets/40a1dd67-2634-43ef-91a3-5a78c48c7b01" />
+
 
 
 ## 1.
