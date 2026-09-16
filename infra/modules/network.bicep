@@ -302,7 +302,7 @@ resource nsgMgmt 'Microsoft.Network/networkSecurityGroups@2025-07-01' = {
           sourceAddressPrefix: '10.0.4.0/24'
           destinationAddressPrefix: '10.0.1.10'
           access: 'Allow'
-          priority: 120
+          priority: 110
           direction: 'Outbound'
         }
       }
