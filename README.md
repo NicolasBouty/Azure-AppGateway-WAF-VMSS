@@ -77,6 +77,9 @@ graph TD
 * **Azure CLI** installé et session active (`az login`).
 * Un certificat SSL/TLS au format PKCS#12 situé dans le répertoire personnel (`~/appgw.pfx`).
 * Les fichiers de configuration `cloud-init-web.yaml` et `cloud-init-api.yaml` présents à la racine du projet.
+* **Certificat PFX obligatoire :** L'Application Gateway v2 nécessite un certificat SSL/TLS au format PKCS#12 (`.pfx`) placé dans votre répertoire personnel (`~/appgw.pfx`).
+  * *Si vous possédez déjà un certificat :* Copiez-le vers `~/appgw.pfx`.
+  * *Si vous n'en avez pas (Lab/Test) :* Voir le lab_guide.md.
 
 ### **Fichiers de paramètres**
 L'infrastructure s'appuie sur la syntaxe native `.bicepparam` pour transmettre les variables au gabarit `main.bicep` :
