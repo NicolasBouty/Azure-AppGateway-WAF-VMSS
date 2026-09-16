@@ -3137,6 +3137,8 @@ rule-public-path    100         PathBasedRouting
 rule-redirect-http  200         Basic
 rule-private-path   300         PathBasedRouting
 ```
+<img width="503" height="121" alt="Capture d&#39;écran 2026-09-16 110642" src="https://github.com/user-attachments/assets/96b2367d-acc8-4427-8cb2-20e8a57b9edd" />
+
 ### HTTPS public : routage basé sur le chemin
 ```Bash
 az network application-gateway rule update \
