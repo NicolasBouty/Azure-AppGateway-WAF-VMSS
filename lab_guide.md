@@ -2933,6 +2933,7 @@ port-443   443
 port-8080  8080
 ```
 <img width="178" height="120" alt="Capture d&#39;écran 2026-09-14 130517" src="https://github.com/user-attachments/assets/4ff18033-3b93-4844-9329-59fc9233081b" />
+
 ### Si le port 443 a un autre nom, mettre à jour :
 ```Bash
 PORT_HTTPS_NAME="<NOM_REEL_DU_PORT_443>"
