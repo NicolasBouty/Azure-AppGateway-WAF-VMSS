@@ -85,6 +85,11 @@ L'infrastructure s'appuie sur la syntaxe native `.bicepparam` pour transmettre l
 
 ### **Procédure d'exécution**
 
-1. **Rendre le script d'automatisation exécutable :**
+**Rendre le script d'automatisation exécutable :**
    ```bash
    chmod +x deploy.sh
+```
+**Rendre le script d'automatisation exécutable :**
+   ```bash
+   ./deploy.sh
+```
