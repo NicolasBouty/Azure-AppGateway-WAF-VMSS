@@ -1,0 +1,27 @@
+#cloud-config
+
+write_files:
+  - path: /etc/systemd/system/az104-web.service
+    permissions: '0644'
+    owner: root:root
+    content: |
+      [Unit]
+      Description=AZ-104 Lab Web Backend
+      After=network-online.target
+      Wants=network-online.target
+
+      [Service]
+      Type=simple
+      ExecStart=/usr/bin/python3 -m http.server 80 --directory /srv/az104/web
+      Restart=always
+      RestartSec=3
+
+      [Install]
+      WantedBy=multi-user.target
+
+runcmd:
+  - mkdir -p /srv/az104/web
+  - printf 'OK-WEB\n' > /srv/az104/web/index.html
+  - chmod 0644 /srv/az104/web/index.html
+  - systemctl daemon-reload
+  - systemctl enable --now az104-web.service
