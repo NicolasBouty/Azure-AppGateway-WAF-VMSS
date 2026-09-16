@@ -103,4 +103,4 @@ module jumpbox 'modules/jumpbox.bicep' = {
 // Outputs globaux
 output vnetId string = network.outputs.vnetId
 output appgwPublicIpId string = appgw.outputs.pipId
-output appgwId string = appgw.outputs.app
+output appgwId string = appgw.outputs.appgwId
