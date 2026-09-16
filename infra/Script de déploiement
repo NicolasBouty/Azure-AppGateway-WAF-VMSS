@@ -1,4 +1,4 @@
-
+```Bash
 #!/usr/bin/env bash
 set -euo pipefail
 
@@ -42,3 +42,8 @@ az deployment group create \
   --parameters cloudinit-parameters.bicepparam
 
 echo "Déploiement terminé avec succès."
+```
+# rendre exécutable
+```Bash
+chmod +x deploy.sh
+```
