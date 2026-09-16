@@ -86,6 +86,8 @@ L'infrastructure s'appuie sur la syntaxe native `.bicepparam` pour transmettre l
 * `parameters.bicepparam` : contient la configuration globale (région, SKU des VM, identifiants).
 * `cloudinit-parameters.bicepparam` : gère l'injection des scripts Cloud-Init pour les instances Web et API.
 
+> ⚠️ **Note sur les tailles de VM :** La taille configurée par défaut dans `parameters.bicepparam` est `Standard_D2als_v7`[cite: 19]. Assurez-vous d'avoir les quotas nécessaires dans votre souscription sur la région cible, ou modifiez la variable `vmSku` vers une taille courante (ex: `Standard_D2s_v5` ou `Standard_B2s`) si besoin
+
 ### **Procédure d'exécution**
 
    **Rendre le script d'automatisation exécutable :**
