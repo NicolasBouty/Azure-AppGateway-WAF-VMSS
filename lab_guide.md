@@ -3557,8 +3557,62 @@ AzureDiagnostics
 | project TimeGenerated, clientIp_s, requestUri_s, ruleId_s, details_message_s, action_s
 | order by TimeGenerated desc
 ```
+<img width="851" height="118" alt="Capture d&#39;écran 2026-09-16 122053" src="https://github.com/user-attachments/assets/ae4dacda-0817-48dc-aab4-fb7c86fd2d54" />
 
-<img width="915" height="236" alt="Capture d&#39;écran 2026-09-16 121748" src="https://github.com/user-attachments/assets/40a1dd67-2634-43ef-91a3-5a78c48c7b01" />
+
+## 3. WAF — Mode Prevention (blocage)
+### Variable
+```Bash
+RG_WORKLOAD="grp_tpaz104-lab2"
+WAF_POLICY_NAME="waf-policy-lab"
+```
+
+### Basculer la WAF en mode Prevention
+```Bash
+az network application-gateway waf-policy policy-setting update \
+  --resource-group "$RG_WORKLOAD" \
+  --policy-name "$WAF_POLICY_NAME" \
+  --mode Prevention
+```
+### vérification 
+```Bash
+az network application-gateway waf-policy show \
+  --resource-group "$RG_WORKLOAD" \
+  --name "$WAF_POLICY_NAME" \
+  --query "{Name:name, Mode:policySettings.mode, State:policySettings.state}" \
+  --output jsonc
+```
+### résultat
+```Bash
+{
+  "Mode": "Prevention",
+  "Name": "waf-policy-lab",
+  "State": "Enabled"
+}
+```
+<img width="280" height="122" alt="Capture d&#39;écran 2026-09-16 123034" src="https://github.com/user-attachments/assets/ef132b33-9191-4d8f-bd97-9b2177ac04e8" />
+
+### Tester le blocage effectif avec curl
+```Bash
+curl -k -s -o /dev/null -w "%{http_code}\n" "https://XX.XX.XX.XX/?id=1%27%20OR%20%271%27=%271"
+```
+### résultat du blocage effectif
+```Bash
+403
+```
+<img width="1124" height="48" alt="Capture d&#39;écran 2026-09-16 123308" src="https://github.com/user-attachments/assets/69854fcd-74c0-4f6e-804e-7f5395a3a7b8" />
+
+### Vérification des logs WAF dans Log Analytics
+kql
+```Bash
+AzureDiagnostics
+| where ResourceType == "APPLICATIONGATEWAYS"
+| where Category == "ApplicationGatewayFirewallLog"
+| where ruleId_s startswith "942"
+| project TimeGenerated, clientIp_s, requestUri_s, ruleId_s, details_message_s, action_s
+| order by TimeGenerated desc
+```
+
 
 
 
