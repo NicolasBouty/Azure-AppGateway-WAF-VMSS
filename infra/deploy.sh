@@ -1,9 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# 1. Création du Resource Group
+# 1. Nom du Groupe de Ressources (interactif)
+read -rp "Nom du groupe de ressources [rg-az104-lab] : " RESOURCE_GROUP
+RESOURCE_GROUP=${RESOURCE_GROUP:-rg-az104-lab}
+
+# Création du Resource Group
 az group create \
-  --name rg-az104-lab \
+  --name "$RESOURCE_GROUP" \
   --location westeurope
 
 # 2. Encodage du certificat PFX
@@ -36,12 +40,8 @@ export AZURE_ADMIN_PASSWORD
 
 # 5. Déploiement Bicep
 az deployment group create \
-  --resource-group rg-az104-lab \
+  --resource-group "$RESOURCE_GROUP" \
   --template-file main.bicep \
   --parameters parameters.bicepparam cloudinit-parameters.bicepparam
 
-
-echo "Déploiement terminé avec succès."
-
-# IMPORTANT :
-# rendre exécutable avec : chmod +x deploy.sh
+echo "Déploiement terminé avec succès dans le groupe $RESOURCE_GROUP."
