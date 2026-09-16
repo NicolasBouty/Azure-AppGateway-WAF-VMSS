@@ -3028,9 +3028,11 @@ az network application-gateway redirect-config show \
 
 ## 8. Créer les URL path maps
 Chaque URL path map utilise la même logique de routage :  
+```Bash
 | Chemin demandé                       | Destination                        |  
 | `/*` ou tout chemin hors `/api/*`    | `pool-web` avec `http-setting-web` |  
 | `/api/*`                             | `pool-api` avec `http-setting-api` |  
+```
 ### Map publique
 ```Bash
 az network application-gateway url-path-map create \
